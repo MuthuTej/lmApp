@@ -8,7 +8,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem('token');
-    router.replace('/auth/sign-in');
+    router.replace('/sign-in');
   };
 
   return (
