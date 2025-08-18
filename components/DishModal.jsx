@@ -47,7 +47,6 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
     skip: !visible, // Only fetch when modal is visible
   });
   const userId = meData?.me?.id || null;
-  console.log(userId);
   
   const [qty, setQty] = useState(1);
   const [addToCartMutation, { loading }] = useMutation(ADD_TO_CART);

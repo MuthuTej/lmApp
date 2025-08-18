@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, Alert } from 'react-native';
 import { useMutation, gql } from '@apollo/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LinearGradient } from 'expo-linear-gradient'; // for gradient background
+import { LinearGradient } from 'expo-linear-gradient';
 
 const SIGN_UP = gql`
   mutation SignUp($email: String!, $password: String!) {

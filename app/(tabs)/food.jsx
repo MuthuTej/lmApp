@@ -42,9 +42,18 @@ const ADD_TO_CART = gql`
   }
 `;
 
+const ME = gql`
+  query {
+    me {
+      id
+      email
+    }
+  }
+`;
 export default function CartScreen() {
-  const userId = 'rV5TsiUSP4u7pavz1XIC';
-  const [loadingItemId, setLoadingItemId] = useState(null); // track which item is updating
+  const { data: meData, loading: meLoading } = useQuery(ME);
+  const userId = meData?.me?.id || null;
+   const [loadingItemId, setLoadingItemId] = useState(null); // track which item is updating
 
   const { data, loading, refetch } = useQuery(GET_CART, {
     variables: { userId },
