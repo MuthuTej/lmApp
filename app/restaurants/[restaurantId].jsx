@@ -65,9 +65,10 @@ export default function RestaurantScreen() {
               <Ionicons name="arrow-back" size={28} color="#333" />
             </TouchableOpacity>
 
-            <Text className="text-xl font-bold text-primary flex-1 text-center -ml-6">
-              {restaurant.name}
-            </Text>
+            <Text className="text-xl font-semibold text-white bg-[#E95322] px-3 py-1 rounded text-center">
+  {restaurant.name}
+</Text>
+
 
             <View className="w-32"></View>
           </View>
