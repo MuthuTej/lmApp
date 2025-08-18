@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, FlatList, Dimensions } from 'react-native';
 import React, { useState } from 'react';
 import { gql, useQuery } from '@apollo/client';
+import { Ionicons } from '@expo/vector-icons';
 
 import HorizontalList from '../../components/HorizontalList';
 import RestaurantCard from '../../components/RestaurantCard';
@@ -40,10 +41,14 @@ const Home = () => {
   return (
     <ScrollView className="flex-1 bg-white px-4 pt-8 h-screen-safe-or-80">
     {/* All Restaurants */}
-    <Text className="text-2xl font-bold text-primary mb-2 mt-10">
-      All Restaurants
-    </Text>
-  
+<View className="flex-row items-center mb-4 mt-10 bg-[#FFF3E0] px-4 py-2 rounded-xl">
+  <Ionicons name="storefront" size={28} color="#FFD700" style={{ marginRight: 8 }} />
+  <Text className="text-2xl text-[#E95322] font-bold">
+    All Restaurants
+  </Text>
+</View>
+
+
     <FlatList
       data={restaurants}
       renderItem={({ item }) => (
@@ -56,9 +61,13 @@ const Home = () => {
     />
   
     {/* Trending Dishes */}
-    <Text className="text-2xl font-bold text-primary mt-8 mb-10">
-      Trending Dishes
-    </Text>
+   <View className="flex-row items-center mb-6 mt-8 bg-[#FFF3E0] px-4 py-2 rounded-xl">
+  <Ionicons name="restaurant-outline" size={28} color="#FFD700" style={{ marginRight: 8 }} />
+  <Text className="text-2xl text-[#E95322] font-bold" style={{ fontFamily: 'PoppinsBold' }}>
+    Trending Dishes
+  </Text>
+</View>
+
   </ScrollView>
   
   );

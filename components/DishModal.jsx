@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { gql, useMutation, useQuery } from '@apollo/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ME = gql`
   query {
@@ -42,13 +43,9 @@ const ADD_TO_CART = gql`
 `;
 
 export default function DishModal({ visible, dish, onClose, restaurant }) {
-    
-  const { data: meData, loading: meLoading } = useQuery(ME, {
-    skip: !visible, // Only fetch when modal is visible
-  });
+  const { data: meData, loading: meLoading } = useQuery(ME, { skip: !visible });
   const userId = meData?.me?.id || null;
-  console.log(userId);
-  
+
   const [qty, setQty] = useState(1);
   const [addToCartMutation, { loading }] = useMutation(ADD_TO_CART);
 
@@ -59,15 +56,14 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
       alert('You must be logged in to add items to your cart.');
       return;
     }
-
     try {
       await addToCartMutation({
         variables: {
           userId,
-          restaurantId: restaurant.name, // Use actual ID from restaurant object
+          restaurantId: restaurant.name,
           dishId: dish.name,
           name: dish.name,
-          price: Number(dish.price), // Ensure price is a Float
+          price: Number(dish.price),
           imageUrl: dish.imageUrl,
           quantity: qty,
         },
@@ -84,7 +80,11 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
       <TouchableWithoutFeedback onPress={onClose}>
         <View className="flex-1 justify-end bg-black/25">
           <TouchableWithoutFeedback>
-            <View className="bg-white rounded-t-3xl p-6" style={{ height: '60%' }}>
+            <SafeAreaView
+              edges={['bottom']}
+              className="bg-white rounded-t-3xl p-6"
+              style={{ minHeight: '60%' }}
+            >
               {/* Grab bar */}
               <View className="items-center">
                 <View className="w-12 h-1.5 bg-gray-400 rounded-full mb-4" />
@@ -126,7 +126,7 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
               <TouchableOpacity onPress={onClose} className="items-center mt-4">
                 <Text className="text-error font-extrabold">Cancel</Text>
               </TouchableOpacity>
-            </View>
+            </SafeAreaView>
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>
