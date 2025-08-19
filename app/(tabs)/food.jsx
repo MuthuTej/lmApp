@@ -42,6 +42,12 @@ const ADD_TO_CART = gql`
   }
 `;
 
+const CHECKOUT_CART = gql`
+  mutation CheckoutCart($userId: String!) {
+    checkoutCart(userId: $userId)
+  }
+`;
+
 const ME = gql`
   query {
     me {
@@ -50,20 +56,32 @@ const ME = gql`
     }
   }
 `;
+
 export default function CartScreen() {
   const { data: meData, loading: meLoading } = useQuery(ME);
   const userId = meData?.me?.id || null;
-   const [loadingItemId, setLoadingItemId] = useState(null); // track which item is updating
+  const [loadingItemId, setLoadingItemId] = useState(null);
 
   const { data, loading, refetch } = useQuery(GET_CART, {
     variables: { userId },
-    fetchPolicy: 'network-only'
+    fetchPolicy: 'network-only',
+    skip: !userId
   });
 
   const [addToCart] = useMutation(ADD_TO_CART, {
     onCompleted: () => {
       setLoadingItemId(null);
       refetch();
+    }
+  });
+
+  const [checkoutCart, { loading: checkoutLoading }] = useMutation(CHECKOUT_CART, {
+    onCompleted: () => {
+      refetch(); // refresh cart after checkout
+      alert('Checkout successful!');
+    },
+    onError: (err) => {
+      alert(`Checkout failed: ${err.message}`);
     }
   });
 
@@ -82,7 +100,12 @@ export default function CartScreen() {
     });
   };
 
-  if (loading) {
+  const handleCheckout = () => {
+    if (!userId) return alert('Please login first');
+    checkoutCart({ variables: { userId } });
+  };
+
+  if (loading || meLoading) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
         <ActivityIndicator size="large" color="#4CAF50" />
@@ -99,42 +122,59 @@ export default function CartScreen() {
   }
 
   return (
-    <FlatList
-      data={data.getCart.items}
-      keyExtractor={(item) => item.dishId}
-      contentContainerStyle={{ paddingTop: 24, paddingHorizontal: 16, paddingBottom: 24 }}
-      renderItem={({ item }) => (
-        <View className="flex-row bg-white rounded-xl p-4 mb-3 shadow-sm">
-          <Image source={{ uri: item.imageUrl }} className="w-20 h-20 rounded-lg" />
-          <View className="flex-1 ml-3 justify-between">
-            <Text className="text-lg font-semibold text-gray-800">{item.name}</Text>
-            <Text className="text-sm text-gray-500">₹{item.price}</Text>
-            <View className="flex-row items-center space-x-4 mt-2">
-              <TouchableOpacity
-                onPress={() => handleQuantityChange(item, -1)}
-                className="bg-gray-200 rounded-full px-3 py-1"
-                disabled={loadingItemId === item.dishId}
-              >
-                <Text className="text-lg font-bold text-gray-700">-</Text>
-              </TouchableOpacity>
+    <View className="flex-1 bg-white">
+      <FlatList
+        data={data.getCart.items}
+        keyExtractor={(item) => item.dishId}
+        contentContainerStyle={{ paddingTop: 24, paddingHorizontal: 16, paddingBottom: 100 }}
+        renderItem={({ item }) => (
+          <View className="flex-row bg-white rounded-xl p-4 mb-3 shadow-sm">
+            <Image source={{ uri: item.imageUrl }} className="w-20 h-20 rounded-lg" />
+            <View className="flex-1 ml-3 justify-between">
+              <Text className="text-lg font-semibold text-gray-800">{item.name}</Text>
+              <Text className="text-sm text-gray-500">₹{item.price}</Text>
+              <View className="flex-row items-center space-x-4 mt-2">
+                <TouchableOpacity
+                  onPress={() => handleQuantityChange(item, -1)}
+                  className="bg-gray-200 rounded-full px-3 py-1"
+                  disabled={loadingItemId === item.dishId}
+                >
+                  <Text className="text-lg font-bold text-gray-700">-</Text>
+                </TouchableOpacity>
 
-              {loadingItemId === item.dishId ? (
-                <ActivityIndicator size="small" color="#4CAF50" />
-              ) : (
-                <Text className="text-lg font-medium text-gray-800">{item.quantity}</Text>
-              )}
+                {loadingItemId === item.dishId ? (
+                  <ActivityIndicator size="small" color="#4CAF50" />
+                ) : (
+                  <Text className="text-lg font-medium text-gray-800">{item.quantity}</Text>
+                )}
 
-              <TouchableOpacity
-                onPress={() => handleQuantityChange(item, 1)}
-                className="bg-green-500 rounded-full px-3 py-1"
-                disabled={loadingItemId === item.dishId}
-              >
-                <Text className="text-lg font-bold text-white">+</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleQuantityChange(item, 1)}
+                  className="bg-green-500 rounded-full px-3 py-1"
+                  disabled={loadingItemId === item.dishId}
+                >
+                  <Text className="text-lg font-bold text-white">+</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      )}
-    />
+        )}
+      />
+
+      {/* Checkout Button */}
+      <View className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
+        <TouchableOpacity
+          onPress={handleCheckout}
+          disabled={checkoutLoading}
+          className="bg-green-600 py-4 rounded-xl"
+        >
+          {checkoutLoading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text className="text-center text-white font-semibold text-lg">Checkout</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
