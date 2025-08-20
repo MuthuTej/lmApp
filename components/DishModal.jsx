@@ -41,6 +41,22 @@ const ADD_TO_CART = gql`
   }
 `;
 
+const GET_CART = gql`
+  query GetCart($userId: String!) {
+    getCart(userId: $userId) {
+      restaurantId
+      items {
+        dishId
+        name
+        price
+        quantity
+        imageUrl
+      }
+      status
+      createdAt
+    }
+  }
+`;
 export default function DishModal({ visible, dish, onClose, restaurant }) {
     
   const { data: meData, loading: meLoading } = useQuery(ME, {
@@ -49,8 +65,13 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
   const userId = meData?.me?.id || null;
   
   const [qty, setQty] = useState(1);
-  const [addToCartMutation, { loading }] = useMutation(ADD_TO_CART);
-
+  const [addToCartMutation, { loading }] = useMutation(ADD_TO_CART, {
+    refetchQueries: [
+      { query: GET_CART, variables: { userId } } // re-fetch cart
+    ],
+    awaitRefetchQueries: true,
+  });
+  
   if (!dish) return null;
 
   const handleAddToCart = async () => {
