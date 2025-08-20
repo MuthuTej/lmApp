@@ -1,95 +1,81 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
-import { Link } from 'expo-router';
-import MaskedView from '@react-native-masked-view/masked-view';
-import rankingGradient from '../assets/rankingGradient.png';
+import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native"
+import { Link } from "expo-router"
+import MaskedView from "@react-native-masked-view/masked-view"
 
-/**
- * Reusable food‑item card (grid‑only).
- *
- * @param {object}  item        – dish document (name/dishName, imageUrl, price, …)
- * @param {number}  index       – list index (0‑based) → used for ranking overlay
- * @param {number}  cardWidth   – width of the square card
- * @param {string}  href        – optional deep‑link (expo‑router)
- * @param {boolean} showRank    – force show / hide the ①②③ badge
- */
-export default function DishCard({
-  item,
-  index = 0,
-  cardWidth = 140,
-  href,
-  showRank,
-  onPress,
-}) {
-  // ── field fallbacks (DBs don’t always agree on naming)
-  const title       = item.name      ?? item.dishName;
-  const imgSrc      = item.imageUrl  ?? item.image;
-  const description = item.description ?? '';
-  const price       = item.price     ?? '—';
-  const isAvailable = item.isAvailable ?? true;
+export default function DishCard({ item, index = 0, cardWidth = 150, href, showRank, onPress }) {
+  const title = item.name ?? item.dishName
+  const imgSrc = item.imageUrl ?? item.image
+  const description = item.description ?? ""
+  const price = item.price ?? "—"
+  const isAvailable = item.isAvailable ?? true
 
-  /* ---------- common inner body ---------- */
   const CardInner = (
     <TouchableOpacity
-      activeOpacity={0.85}
-      style={{ width: cardWidth }}
-      className="relative"
-      onPress={onPress}
+  activeOpacity={0.9}
+  style={{
+    width: cardWidth,
+    height: 210,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    borderWidth: 2,            // added to show border
+    borderColor: "#F5CB58",    // yellow border
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    marginHorizontal: 6,       // small gap between cards
+    marginVertical: 8,         // vertical spacing
+  }}
+  onPress={onPress}
+>
 
-    >
       {/* IMAGE */}
-      <Image
-        source={{ uri: imgSrc }}
-        className="w-full h-40 rounded-lg"
-        resizeMode="cover"
-      />
+      <Image source={{ uri: imgSrc }} style={{ width: "100%", height: 115 }} resizeMode="cover" />
 
-      {/* RANK BADGE (only if showRank = true) */}
+      {/* Rank Badge */}
       {showRank && (
-        <View className="absolute bottom-9 -left-3.5 -top-1 px-2 py-1 rounded-full">
-          <MaskedView
-            maskElement={
-              <Text className="font-bold text-white text-6xl ml-3 mt-2">
-                {index + 1}
-              </Text>
-            }
-          >
-            <Image source={rankingGradient} className="size-14" />
+        <View style={{ position: "absolute", top: -5, left: -5, width: 30, height: 30, alignItems: "center", justifyContent: "center" }}>
+          <MaskedView maskElement={<Text style={{ fontWeight: "bold", fontSize: 14, color: "white" }}>{index + 1}</Text>}>
+            <Image source={rankingGradient} style={{ width: 30, height: 30 }} />
           </MaskedView>
         </View>
       )}
 
-      {/* TEXT BLOCK */}
-      <View>
-        <Text
-          className="text-base font-bold mt-2 text-light-200"
-          numberOfLines={1}
-        >
-          {title}
-        </Text>
-
-        {!!description && (
-          <Text className="text-xs text-light-300 mt-1" numberOfLines={2}>
-            {description}
+      {/* CONTENT */}
+      <View style={{ padding: 8, flex: 1, justifyContent: "space-between" }}>
+        <View>
+          <Text style={{ fontSize: 13, fontWeight: "700", color: "#1f2937" }} numberOfLines={1}>
+            {title}
           </Text>
-        )}
+          {!!description && (
+            <Text style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }} numberOfLines={2}>
+              {description}
+            </Text>
+          )}
+        </View>
 
-        <Text className="mt-1 font-semibold text-success text-light-100">
-          ₹{price} {isAvailable ? '' : '(Unavailable)'}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
+          <Text style={{ fontSize: 13, fontWeight: "bold", color: "#059669" }}>₹{price}</Text>
+          {!isAvailable && <Text style={{ fontSize: 10, fontWeight: "600", color: "#dc2626" }}>Unavailable</Text>}
+        </View>
       </View>
     </TouchableOpacity>
-  );
+  )
 
-  /* ---------- wrapper: link vs. plain ---------- */
-  const maybeLinked = href ? (
-    <Link href={href} asChild>
-      {CardInner}
-    </Link>
-  ) : (
-    CardInner
-  );
+  return href ? <Link href={href} asChild>{CardInner}</Link> : CardInner
+}
 
-  /* ---------- final return ---------- */
-  return <View style={{ width: cardWidth }}>{maybeLinked}</View>;
+/* ---------- Example usage ---------- */
+export function DishGrid({ data }) {
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 14 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center" }}>
+        {data.map((item, idx) => (
+          <DishCard key={idx} item={item} index={idx} showRank={false} />
+        ))}
+      </View>
+    </ScrollView>
+  )
 }
