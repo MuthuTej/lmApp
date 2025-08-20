@@ -183,7 +183,7 @@ const Home = () => {
             data={restaurants}
             renderItem={({ item }) => (
               <Link href={`/restaurants/${item.name}`} asChild>
-                <TouchableOpacity className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-4 overflow-hidden">
+                <TouchableOpacity className="bg-white rounded-2xl shadow-md border-2 border-orange-200 mb-4 overflow-hidden">
                   <View className="h-40 bg-gray-200 relative" />
                   <View className="p-4">
                     <Text className="text-xl font-bold text-gray-800 mb-1">

@@ -17,16 +17,16 @@ export default function DishCard({ item, index = 0, cardWidth = 150, href, showR
     height: 210,
     backgroundColor: "#fff",
     borderRadius: 14,
-    borderWidth: 2,            // added to show border
-    borderColor: "#F5CB58",    // yellow border
+    borderWidth: 1,            
+    borderColor: "#F5CB58",  
     overflow: "hidden",
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
-    marginHorizontal: 6,       // small gap between cards
-    marginVertical: 8,         // vertical spacing
+    marginHorizontal: 6,       
+    marginVertical: 8,         
   }}
   onPress={onPress}
 >

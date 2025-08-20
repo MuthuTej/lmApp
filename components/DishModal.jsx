@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { gql, useMutation, useQuery } from '@apollo/client';
@@ -58,12 +59,11 @@ const GET_CART = gql`
   }
 `;
 export default function DishModal({ visible, dish, onClose, restaurant }) {
-    
   const { data: meData, loading: meLoading } = useQuery(ME, {
-    skip: !visible, // Only fetch when modal is visible
+    skip: !visible,
   });
   const userId = meData?.me?.id || null;
-  
+
   const [qty, setQty] = useState(1);
   const [addToCartMutation, { loading }] = useMutation(ADD_TO_CART, {
     refetchQueries: [
@@ -84,10 +84,10 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
       await addToCartMutation({
         variables: {
           userId,
-          restaurantId: restaurant.name, // Use actual ID from restaurant object
+          restaurantId: restaurant.name,
           dishId: dish.name,
           name: dish.name,
-          price: Number(dish.price), // Ensure price is a Float
+          price: Number(dish.price),
           imageUrl: dish.imageUrl,
           quantity: qty,
         },
@@ -102,51 +102,49 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <TouchableWithoutFeedback onPress={onClose}>
-        <View className="flex-1 justify-end bg-black/25">
+        <View className="flex-1 justify-end bg-black/30">
           <TouchableWithoutFeedback>
-            <View className="bg-white rounded-t-3xl p-6" style={{ height: '60%' }}>
+            <SafeAreaView className="bg-white rounded-t-2xl p-4" style={{ maxHeight: '75%' }}>
               {/* Grab bar */}
               <View className="items-center">
-                <View className="w-12 h-1.5 bg-gray-400 rounded-full mb-4" />
+                <View className="w-10 h-1 bg-gray-400 rounded-full mb-3" />
               </View>
 
               {/* Dish Image */}
-              <Image source={{ uri: dish.imageUrl }} className="w-full h-72 rounded-xl" />
+              <Image source={{ uri: dish.imageUrl }} className="w-full h-48 rounded-lg" />
 
               {/* Dish Details */}
-              <Text className="text-xl font-semibold mt-3">{dish.name}</Text>
-              <Text className="text-gray-500">{dish.description}</Text>
-              <Text className="text-lg font-bold mt-2">₹{dish.price}</Text>
+              <Text className="text-lg font-bold mt-2 text-black">{dish.name}</Text>
+              <Text className="text-gray-600 text-sm">{dish.description}</Text>
+              <Text className="text-base font-bold mt-1 text-green-600">₹{dish.price}</Text>
 
               {/* Quantity Selector */}
-              <View className="flex-row items-center mt-4 w-full justify-center">
-                <View className="flex-row gap-x-5 items-center">
-                  <TouchableOpacity onPress={() => setQty(Math.max(1, qty - 1))}>
-                    <Ionicons name="remove-circle" size={35} color="#9810fa" />
-                  </TouchableOpacity>
-                  <Text className="text-xl">{qty}</Text>
-                  <TouchableOpacity onPress={() => setQty(qty + 1)}>
-                    <Ionicons name="add-circle" size={35} color="#9810fa" />
-                  </TouchableOpacity>
-                </View>
+              <View className="flex-row items-center mt-3 justify-center">
+                <TouchableOpacity onPress={() => setQty(Math.max(1, qty - 1))}>
+                  <Ionicons name="remove-circle" size={32} color="#F59E0B" />
+                </TouchableOpacity>
+                <Text className="text-lg font-semibold text-black mx-4">{qty}</Text>
+                <TouchableOpacity onPress={() => setQty(qty + 1)}>
+                  <Ionicons name="add-circle" size={32} color="#F59E0B" />
+                </TouchableOpacity>
               </View>
 
               {/* Add to Cart Button */}
               <TouchableOpacity
                 onPress={handleAddToCart}
                 disabled={loading || meLoading}
-                className="bg-success rounded-xl py-3 mt-6"
+                className="bg-yellow-500 rounded-lg py-3 mt-5"
               >
-                <Text className="text-center text-white font-semibold">
+                <Text className="text-center text-white font-bold">
                   {loading ? 'Adding...' : `Add ${qty} • ₹${dish.price * qty}`}
                 </Text>
               </TouchableOpacity>
 
               {/* Cancel Button */}
-              <TouchableOpacity onPress={onClose} className="items-center mt-4">
-                <Text className="text-error font-extrabold">Cancel</Text>
+              <TouchableOpacity onPress={onClose} className="items-center mt-3">
+                <Text className="text-red-600 font-bold">Cancel</Text>
               </TouchableOpacity>
-            </View>
+            </SafeAreaView>
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>

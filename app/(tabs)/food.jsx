@@ -1,180 +1,217 @@
 // CartScreen.jsx
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Image, ActivityIndicator } from 'react-native';
-import { gql, useQuery, useMutation } from '@apollo/client';
+import React,{useState} from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  Image,
+  ActivityIndicator,
+  SafeAreaView,
+} from "react-native";
+import {gql,useQuery,useMutation} from "@apollo/client";
 
-const GET_CART = gql`
-  query GetCart($userId: String!) {
-    getCart(userId: $userId) {
+// --- GraphQL Queries/Mutations ---
+const GET_CART=gql`
+  query GetCart($userId:String!){
+    getCart(userId:$userId){
       restaurantId
-      items {
+      items{
         dishId
         name
         price
         quantity
         imageUrl
       }
-      status
-      createdAt
     }
   }
 `;
 
-const ADD_TO_CART = gql`
+const ADD_TO_CART=gql`
   mutation AddToCart(
-    $userId: String!
-    $restaurantId: String!
-    $dishId: String!
-    $name: String!
-    $price: Float!
-    $imageUrl: String!
-    $quantity: Int!
-  ) {
+    $userId:String!
+    $restaurantId:String!
+    $dishId:String!
+    $name:String!
+    $price:Float!
+    $imageUrl:String!
+    $quantity:Int!
+  ){
     addToCart(
-      userId: $userId
-      restaurantId: $restaurantId
-      dishId: $dishId
-      name: $name
-      price: $price
-      imageUrl: $imageUrl
-      quantity: $quantity
+      userId:$userId
+      restaurantId:$restaurantId
+      dishId:$dishId
+      name:$name
+      price:$price
+      imageUrl:$imageUrl
+      quantity:$quantity
     )
   }
 `;
 
-const CHECKOUT_CART = gql`
-  mutation CheckoutCart($userId: String!) {
-    checkoutCart(userId: $userId)
+const CLEAR_CART=gql`
+  mutation ClearCart($userId:String!){
+    clearCart(userId:$userId)
   }
 `;
 
-const ME = gql`
-  query {
-    me {
+const CHECKOUT_CART=gql`
+  mutation CheckoutCart($userId:String!){
+    checkoutCart(userId:$userId)
+  }
+`;
+
+const ME=gql`
+  query{
+    me{
       id
       email
     }
   }
 `;
 
-export default function CartScreen() {
-  const { data: meData, loading: meLoading } = useQuery(ME);
-  const userId = meData?.me?.id || null;
-  const [loadingItemId, setLoadingItemId] = useState(null);
+export default function CartScreen(){
+  const {data:meData,loading:meLoading}=useQuery(ME);
+  const userId=meData?.me?.id||null;
+  const [loadingItemId,setLoadingItemId]=useState(null);
 
-  const { data, loading, refetch } = useQuery(GET_CART, {
-    variables: { userId },
-    fetchPolicy: 'network-only',
-    skip: !userId
+  const {data,loading,refetch}=useQuery(GET_CART,{
+    variables:{userId},
+    fetchPolicy:"network-only",
+    skip:!userId,
   });
 
-  const [addToCart] = useMutation(ADD_TO_CART, {
-    onCompleted: () => {
+  const [addToCart]=useMutation(ADD_TO_CART,{
+    onCompleted:()=>{
       setLoadingItemId(null);
       refetch();
-    }
-  });
-
-  const [checkoutCart, { loading: checkoutLoading }] = useMutation(CHECKOUT_CART, {
-    onCompleted: () => {
-      refetch(); // refresh cart after checkout
-      alert('Checkout successful!');
     },
-    onError: (err) => {
-      alert(`Checkout failed: ${err.message}`);
-    }
   });
 
-  const handleQuantityChange = (item, change) => {
+  const [clearCart]=useMutation(CLEAR_CART,{onCompleted:()=>refetch()});
+
+  const [checkoutCart,{loading:checkoutLoading}]=useMutation(CHECKOUT_CART,{
+    onCompleted:()=>{
+      refetch();
+      alert("Checkout successful!");
+    },
+    onError:(err)=>alert(`Checkout failed: ${err.message}`),
+  });
+
+  const handleQuantityChange=(item,change)=>{
     setLoadingItemId(item.dishId);
     addToCart({
-      variables: {
+      variables:{
         userId,
-        restaurantId: data?.getCart?.restaurantId || '',
-        dishId: item.dishId,
-        name: item.name,
-        price: item.price,
-        imageUrl: item.imageUrl,
-        quantity: change
-      }
+        restaurantId:data?.getCart?.restaurantId||"",
+        dishId:item.dishId,
+        name:item.name,
+        price:item.price,
+        imageUrl:item.imageUrl,
+        quantity:change,
+      },
     });
   };
 
-  const handleCheckout = () => {
-    if (!userId) return alert('Please login first');
-    checkoutCart({ variables: { userId } });
+  const handleClearAll=()=>{
+    if(!userId) return alert("Please login first");
+    clearCart({variables:{userId}});
   };
 
-  if (loading || meLoading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#4CAF50" />
-      </View>
+  const handleCheckout=()=>{
+    if(!userId) return alert("Please login first");
+    checkoutCart({variables:{userId}});
+  };
+
+  if(loading||meLoading){
+    return(
+      <SafeAreaView className="flex-1 justify-center items-center">
+        <ActivityIndicator size="large" color="#f97316"/>
+      </SafeAreaView>
     );
   }
 
-  if (!data?.getCart?.items?.length) {
-    return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <Text className="text-gray-600 text-lg">Your cart is empty</Text>
-      </View>
+  if(!data?.getCart?.items?.length){
+    return(
+      <SafeAreaView className="flex-1 justify-center items-center">
+        <Text className="text-gray-500 text-base">Your cart is empty</Text>
+      </SafeAreaView>
     );
   }
 
-  return (
-    <View className="flex-1 bg-white">
+  return(
+    <SafeAreaView className="flex-1 bg-white">
+      {/* Header */}
+      <View className="flex-row justify-between items-center px-5 pt-12 pb-4">
+  <Text className="text-xl font-bold text-gray-800">Orders</Text>
+  <TouchableOpacity 
+    onPress={handleClearAll} 
+    className="bg-red-500 px-3 py-1 rounded-lg"
+  >
+    <Text className="text-white font-semibold">Clear all</Text>
+  </TouchableOpacity>
+</View>
+
+      {/* Cart Items */}
       <FlatList
         data={data.getCart.items}
-        keyExtractor={(item) => item.dishId}
-        contentContainerStyle={{ paddingTop: 24, paddingHorizontal: 16, paddingBottom: 100 }}
-        renderItem={({ item }) => (
-          <View className="flex-row bg-white rounded-xl p-4 mb-3 shadow-sm">
-            <Image source={{ uri: item.imageUrl }} className="w-20 h-20 rounded-lg" />
-            <View className="flex-1 ml-3 justify-between">
-              <Text className="text-lg font-semibold text-gray-800">{item.name}</Text>
-              <Text className="text-sm text-gray-500">₹{item.price}</Text>
-              <View className="flex-row items-center space-x-4 mt-2">
-                <TouchableOpacity
-                  onPress={() => handleQuantityChange(item, -1)}
-                  className="bg-gray-200 rounded-full px-3 py-1"
-                  disabled={loadingItemId === item.dishId}
-                >
-                  <Text className="text-lg font-bold text-gray-700">-</Text>
-                </TouchableOpacity>
+        keyExtractor={(item)=>item.dishId}
+        contentContainerStyle={{paddingHorizontal:16,paddingBottom:120}}
+        renderItem={({item})=>(
+          <View className="flex-row bg-gray-50 rounded-2xl p-4 mb-4 items-center shadow-lg border border-gray-200">
+            {/* Image */}
+            <Image source={{uri:item.imageUrl}} className="w-[60px] h-[60px] rounded-lg"/>
 
-                {loadingItemId === item.dishId ? (
-                  <ActivityIndicator size="small" color="#4CAF50" />
-                ) : (
-                  <Text className="text-lg font-medium text-gray-800">{item.quantity}</Text>
-                )}
+            {/* Middle text (name & price) */}
+            <View className="flex-1 ml-3">
+              <Text className="text-base font-semibold text-gray-800">{item.name}</Text>
+              <Text className="text-sm text-pink-600 font-medium mt-1">₹{item.price}</Text>
+            </View>
 
-                <TouchableOpacity
-                  onPress={() => handleQuantityChange(item, 1)}
-                  className="bg-green-500 rounded-full px-3 py-1"
-                  disabled={loadingItemId === item.dishId}
-                >
-                  <Text className="text-lg font-bold text-white">+</Text>
-                </TouchableOpacity>
-              </View>
+            {/* Right controls */}
+            <View className="flex-row items-center">
+              {/* Decrease */}
+              <TouchableOpacity
+                onPress={()=>handleQuantityChange(item,-1)}
+                disabled={loadingItemId===item.dishId}
+                className="bg-gray-200 w-8 h-8 rounded-full justify-center items-center"
+              >
+                <Text className="text-lg font-bold text-gray-600">-</Text>
+              </TouchableOpacity>
+
+              {loadingItemId===item.dishId?(
+                <ActivityIndicator size="small" color="#f97316" className="mx-3"/>
+              ):(
+                <Text className="mx-3 text-base font-medium text-gray-700">{item.quantity}</Text>
+              )}
+
+              {/* Increase */}
+              <TouchableOpacity
+                onPress={()=>handleQuantityChange(item,1)}
+                disabled={loadingItemId===item.dishId}
+                className="bg-orange-500 w-8 h-8 rounded-full justify-center items-center"
+              >
+                <Text className="text-lg font-bold text-white">+</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
       />
 
       {/* Checkout Button */}
-      <View className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
+      <View className="p-4 bg-white border-t border-gray-200 shadow-md">
         <TouchableOpacity
           onPress={handleCheckout}
           disabled={checkoutLoading}
-          className="bg-green-600 py-4 rounded-xl"
+          className="bg-orange-500 py-4 rounded-lg"
         >
-          {checkoutLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text className="text-center text-white font-semibold text-lg">Checkout</Text>
+          {checkoutLoading?(
+            <ActivityIndicator size="small" color="#fff"/>
+          ):(
+            <Text className="text-center text-white text-lg font-semibold">Checkout</Text>
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
