@@ -5,8 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const SIGN_UP = gql`
-  mutation SignUp($email: String!, $password: String!) {
-    signUp(email: $email, password: $password) {
+  mutation SignUp($email: String!, $password: String!, $name: String!) {
+    signUp(email: $email, password: $password, name: $name) {
       token
       userId
     }
@@ -14,6 +14,7 @@ const SIGN_UP = gql`
 `;
 
 export default function SignUp({ navigation }) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -29,18 +30,29 @@ export default function SignUp({ navigation }) {
       Alert.alert('Invalid Email', 'Please use your @citchennai.net email address.');
       return;
     }
-    signUp({ variables: { email, password } });
+    if (!name.trim()) {
+      Alert.alert('Missing Name', 'Please enter your full name.');
+      return;
+    }
+    signUp({ variables: { email, password, name } });
   };
 
   return (
     <LinearGradient
-      colors={['#FFE5B4', '#FFDAB9']} // pale orange gradient
+      colors={['#FFE5B4', '#FFDAB9']}
       className="flex-1 justify-center px-6"
     >
       <View className="bg-white rounded-2xl shadow-lg p-6">
         <Text className="text-2xl font-bold text-center text-orange-500 mb-4">
           Create Account
         </Text>
+
+        <TextInput
+          placeholder="Full Name"
+          value={name}
+          onChangeText={setName}
+          className="border border-orange-300 rounded-lg px-4 py-2 mb-4"
+        />
 
         <TextInput
           placeholder="Email"

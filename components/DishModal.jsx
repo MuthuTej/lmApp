@@ -16,45 +16,51 @@ const ME = gql`
     me {
       id
       email
+      name
     }
   }
 `;
 
 const ADD_TO_CART = gql`
   mutation AddToCart(
-    $userId: String!
-    $restaurantId: String!
-    $dishId: String!
-    $name: String!
-    $price: Float!
-    $imageUrl: String!
-    $quantity: Int!
-  ) {
-    addToCart(
-      userId: $userId
-      restaurantId: $restaurantId
-      dishId: $dishId
-      name: $name
-      price: $price
-      imageUrl: $imageUrl
-      quantity: $quantity
-    )
-  }
+  $userId: String!
+  $restaurantId: String!
+  $dishId: String!
+  $dishName: String!
+  $price: Float!
+  $quantity: Int!
+  $userName: String!
+  $imageUrl: String
+) {
+  addToCart(
+    userId: $userId
+    restaurantId: $restaurantId
+    dishId: $dishId
+    dishName: $dishName
+    price: $price
+    quantity: $quantity
+    userName: $userName
+    imageUrl: $imageUrl
+  )
+}
+
 `;
+
 
 const GET_CART = gql`
   query GetCart($userId: String!) {
     getCart(userId: $userId) {
-      restaurantId
-      items {
-        dishId
-        name
-        price
-        quantity
-        imageUrl
-      }
-      status
-      createdAt
+     createdAt
+    items {
+      dishId
+      dishName
+      imageUrl
+      price
+      quantity
+    }
+    restaurantId
+    status
+    userName
     }
   }
 `;
@@ -63,6 +69,9 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
     skip: !visible,
   });
   const userId = meData?.me?.id || null;
+  const userName = meData?.me?.name || null;
+
+
 
   const [qty, setQty] = useState(1);
   const [addToCartMutation, { loading }] = useMutation(ADD_TO_CART, {
@@ -71,7 +80,7 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
     ],
     awaitRefetchQueries: true,
   });
-  
+
   if (!dish) return null;
 
   const handleAddToCart = async () => {
@@ -86,7 +95,8 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
           userId,
           restaurantId: restaurant.name,
           dishId: dish.name,
-          name: dish.name,
+          dishName: dish.name,
+          userName: userName,
           price: Number(dish.price),
           imageUrl: dish.imageUrl,
           quantity: qty,
@@ -95,11 +105,20 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
       setQty(1);
       onClose();
     } catch (err) {
+      console.error("GraphQL Error:", JSON.stringify(err, null, 2));
       alert(err.message);
     }
   };
+  console.log(userId, restaurant.name, dish.name);
+
+  if (!userId || !restaurant?.name || !dish?.name) {
+
+    alert("Missing user, restaurant, or dish ID");
+    return;
+  }
 
   return (
+
     <Modal visible={visible} animationType="slide" transparent>
       <TouchableWithoutFeedback onPress={onClose}>
         <View className="flex-1 justify-end bg-black/30">
