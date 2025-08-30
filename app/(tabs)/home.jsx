@@ -184,8 +184,11 @@ const Home = () => {
             renderItem={({ item }) => (
               <Link href={`/restaurants/${item.name}`} asChild>
                 <TouchableOpacity className="bg-white rounded-2xl shadow-md border-2 border-orange-200 mb-4 overflow-hidden">
-                  <View className="h-40 bg-gray-200 relative" />
-                  <View className="p-4">
+                  <Image
+                    source={{ uri: item.imageUrl }}
+                    className="h-40 w-full"
+                    resizeMode="cover"
+                  />                  <View className="p-4">
                     <Text className="text-xl font-bold text-gray-800 mb-1">
                       {item.displayName}
                     </Text>
