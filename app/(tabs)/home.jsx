@@ -98,7 +98,7 @@ const Home = () => {
   }, []);
 
   if (loading) return <Loader text="Preparing your meals :)" />;
-  if (error) return <Text>Error loading restaurants</Text>;
+  if (error) return <Text>Error loading restaurants: {error.message}</Text>;
 
   const handleSelectFood = (item) => {
     setSelectedDish(item);
