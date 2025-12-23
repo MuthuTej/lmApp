@@ -84,8 +84,8 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
   if (!dish) return null;
 
   const handleAddToCart = async () => {
-    if (!userId) {
-      alert('You must be logged in to add items to your cart.');
+     if (!userId || !restaurant?.name || !dish?.name) {
+      alert("Missing user, restaurant, or dish ID");
       return;
     }
 
@@ -120,12 +120,7 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
     }
   };
   console.log(userId, restaurant.name, dish.name);
-
-  if (!userId || !restaurant?.name || !dish?.name) {
-
-    alert("Missing user, restaurant, or dish ID");
-    return;
-  }
+  if (!visible || !dish) return null;
 
   return (
 
