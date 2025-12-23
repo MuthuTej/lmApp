@@ -75,9 +75,9 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
 
   const [qty, setQty] = useState(1);
   const [addToCartMutation, { loading }] = useMutation(ADD_TO_CART, {
-    refetchQueries: [
-      { query: GET_CART, variables: { userId } } // re-fetch cart
-    ],
+    refetchQueries: userId
+      ? [{ query: GET_CART, variables: { userId } }]
+      : [],
     awaitRefetchQueries: true,
   });
 
