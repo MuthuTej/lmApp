@@ -96,6 +96,19 @@ export default function CartScreen() {
       setLoadingItemId(null);
       refetch();
     },
+    onError: (err) => {
+      setLoadingItemId(null);
+
+      const message = err.message || "";
+
+      if (message.includes("not available")) {
+        alert("This item is currently unavailable.");
+      } else if (message.includes("not found")) {
+        alert("This item is no longer on the menu.");
+      } else {
+        alert("Unable to update cart. Please try again.");
+      }
+    },
   });
 
   const [clearCart] = useMutation(CLEAR_CART, { onCompleted: () => refetch() });

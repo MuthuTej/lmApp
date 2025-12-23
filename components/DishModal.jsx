@@ -105,8 +105,18 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
       setQty(1);
       onClose();
     } catch (err) {
-      console.error("GraphQL Error:", JSON.stringify(err, null, 2));
-      alert(err.message);
+      const message =
+        err?.graphQLErrors?.[0]?.message ||
+        err.message ||
+        "Unable to add item";
+
+      if (message.includes("not available")) {
+        alert("This item is currently unavailable.");
+      } else if (message.includes("not found")) {
+        alert("This item is no longer on the menu.");
+      } else {
+        alert("Unable to add item to cart.");
+      }
     }
   };
   console.log(userId, restaurant.name, dish.name);
