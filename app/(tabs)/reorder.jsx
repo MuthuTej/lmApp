@@ -48,8 +48,8 @@ const GET_ORDERS = gql`
 
 // Reorder mutation
 const REORDER_MUTATION = gql`
-  mutation Reorder($userId: String!) {
-    reorder(userId: $userId) {
+  mutation Reorder($userId: String!, $forceAdd: Boolean) {
+    reorder(userId: $userId, forceAdd: $forceAdd) {
       status
       availableItems {
         dishName
@@ -124,19 +124,19 @@ const Reorder = () => {
 
         Alert.alert(
           "Some items unavailable",
-          `Some items are unavailable:
-
-${unavailableNames}
-
-Would you like to add the remaining items to your cart or cancel the reorder?`,
+          `Unavailable items:\n${unavailableNames}\n\nAdd remaining items to cart?`,
           [
+            { text: "Cancel", style: "cancel" },
             {
-              text: "Cancel",
-              style: "cancel"
-            },
-            {
-              text: "Add Available Items to cart",
-              onPress: () => {
+              text: "Add Available Items",
+              onPress: async () => {
+                await reorder({
+                  variables: {
+                    userId,
+                    forceAdd: true
+                  }
+                });
+
                 Alert.alert(
                   "Reorder updated",
                   "Available items have been added to your cart"
