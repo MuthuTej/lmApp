@@ -115,7 +115,7 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
       } else if (message.includes("not found")) {
         alert("This item is no longer on the menu.");
       } else {
-        alert("Unable to add item to cart.");
+        alert(message);
       }
     }
   };
