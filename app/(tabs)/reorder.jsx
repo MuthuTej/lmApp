@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native'
+import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native'
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { gql, useQuery, useMutation } from "@apollo/client"
@@ -48,8 +48,19 @@ const GET_ORDERS = gql`
 
 // Reorder mutation
 const REORDER_MUTATION = gql`
-  mutation Reorder($userId: String!) {
-    reorder(userId: $userId)
+  mutation Reorder($userId: String!, $forceAdd: Boolean) {
+    reorder(userId: $userId, forceAdd: $forceAdd) {
+      status
+      availableItems {
+        dishName
+        price
+        quantity
+        imageUrl
+      }
+      unavailableItems {
+        dishName
+      }
+    }
   }
 `
 
@@ -87,11 +98,57 @@ const Reorder = () => {
   // Handle reorder
   const handleReorder = async () => {
     try {
-      const res = await reorder({ variables: { userId } })
-      alert(res.data.reorder || "Reorder success!")
+      const res = await reorder({ variables: { userId } });
+      const data = res.data.reorder;
+
+      // 🟢 All items available
+      if (data.status === "ALL_AVAILABLE") {
+        Alert.alert("Reorder added", "Items have been added to your cart");
+        return;
+      }
+
+      // 🔴 No items available
+      if (data.status === "NO_ITEMS_AVAILABLE") {
+        Alert.alert(
+          "Items unavailable",
+          "None of the items from your last order are currently available."
+        );
+        return;
+      }
+
+      // 🟡 Partial availability
+      if (data.status === "PARTIAL_AVAILABLE") {
+        const unavailableNames = data.unavailableItems
+          .map(i => i.dishName)
+          .join(", ");
+
+        Alert.alert(
+          "Some items unavailable",
+          `Unavailable items:\n${unavailableNames}\n\nAdd remaining items to cart?`,
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Add Available Items",
+              onPress: async () => {
+                await reorder({
+                  variables: {
+                    userId,
+                    forceAdd: true
+                  }
+                });
+
+                Alert.alert(
+                  "Reorder updated",
+                  "Available items have been added to your cart"
+                );
+              }
+            }
+          ]
+        );
+      }
     } catch (err) {
-      console.error(err)
-      alert("Failed to reorder")
+      console.error("Reorder failed:", err);
+      Alert.alert("Error", "Failed to reorder. Please try again.");
     }
   }
 
