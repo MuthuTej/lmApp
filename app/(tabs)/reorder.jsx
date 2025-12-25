@@ -76,7 +76,7 @@ const Reorder = () => {
   const { data, loading, error, refetch } = useQuery(GET_ORDERS, {
     variables: { userId },
     skip: !userId,
-    pollInterval: 5000, // ✅ Refetch every 5 seconds to get status updates
+    // pollInterval: 5000, // ✅ Refetch every 5 seconds to get status updates
   })
 
   // Handle loading & error states
@@ -213,8 +213,14 @@ const Reorder = () => {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {/* Tracking Orders */}
-        <View className="mb-4">
+        <View className="flex-row justify-between items-center mb-4">
           <Text className="text-xl font-bold text-gray-800">Tracking Orders</Text>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            className="bg-gray-100 px-3 py-1 rounded-full border border-gray-300"
+          >
+            <Text className="text-xs font-medium text-gray-600">Refresh</Text>
+          </TouchableOpacity>
         </View>
 
         {trackingOrders.length > 0
