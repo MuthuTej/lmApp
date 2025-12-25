@@ -8,69 +8,92 @@ import {
   Image,
   ActivityIndicator,
   SafeAreaView,
+  Modal,
 } from "react-native";
 import { gql, useQuery, useMutation } from "@apollo/client";
+import { WebView } from "react-native-webview";
 
-// --- GraphQL Queries/Mutations ---
+// ------------------ GraphQL ------------------
 
 const GET_CART = gql`
   query GetCart($userId: String!) {
     getCart(userId: $userId) {
-     createdAt
-    items {
-      dishId
-      dishName
-      imageUrl
-      price
-      quantity
-    }
-    restaurantId
-    status
-    userName
+      createdAt
+      items {
+        dishId
+        dishName
+        imageUrl
+        price
+        quantity
+      }
+      restaurantId
+      status
+      userName
     }
   }
 `;
 
 const ADD_TO_CART = gql`
   mutation AddToCart(
-  $userId: String!
-  $restaurantId: String!
-  $dishId: String!
-  $dishName: String!
-  $price: Float!
-  $quantity: Int!
-  $userName: String!
-  $imageUrl: String
-) {
-  addToCart(
-    userId: $userId
-    restaurantId: $restaurantId
-    dishId: $dishId
-    dishName: $dishName
-    price: $price
-    quantity: $quantity
-    userName: $userName
-    imageUrl: $imageUrl
-  )
-}
-
+    $userId: String!
+    $restaurantId: String!
+    $dishId: String!
+    $dishName: String!
+    $price: Float!
+    $quantity: Int!
+    $userName: String!
+    $imageUrl: String
+  ) {
+    addToCart(
+      userId: $userId
+      restaurantId: $restaurantId
+      dishId: $dishId
+      dishName: $dishName
+      price: $price
+      quantity: $quantity
+      userName: $userName
+      imageUrl: $imageUrl
+    )
+  }
 `;
 
 const CLEAR_CART = gql`
-  mutation ClearCart($userId:String!){
-    clearCart(userId:$userId)
+  mutation ClearCart($userId: String!) {
+    clearCart(userId: $userId)
   }
 `;
 
 const CHECKOUT_CART = gql`
-  mutation CheckoutCart($userId:String!){
-    checkoutCart(userId:$userId)
+  mutation CheckoutCart($userId: String!) {
+    checkoutCart(userId: $userId) {
+      success
+      internalOrderId
+      restaurantId
+      total
+    }
+  }
+`;
+
+const CREATE_CASHFREE_ORDER = gql`
+  mutation CreateCashfreeOrder(
+    $restaurantId: String!
+    $internalOrderId: String!
+    $total: Float!
+  ) {
+    createCashfreeOrder(
+      restaurantId: $restaurantId
+      internalOrderId: $internalOrderId
+      total: $total
+    ) {
+      paymentSessionId
+      success
+    }
   }
 `;
 
 const ME = gql`
-  query{
-    me{
+  query {
+    me {
       id
       email
       name
@@ -78,12 +101,16 @@ const ME = gql`
   }
 `;
 
+// ------------------ Component ------------------
+
 export default function CartScreen() {
   const { data: meData, loading: meLoading } = useQuery(ME);
   const userId = meData?.me?.id || null;
   const userName = meData?.me?.name || null;
 
   const [loadingItemId, setLoadingItemId] = useState(null);
+  const [paymentUrl, setPaymentUrl] = useState(null);
+  const [showWebView, setShowWebView] = useState(false);
 
   const { data, loading, refetch } = useQuery(GET_CART, {
     variables: { userId },
@@ -98,15 +125,17 @@ export default function CartScreen() {
     },
   });
 
-  const [clearCart] = useMutation(CLEAR_CART, { onCompleted: () => refetch() });
-
-  const [checkoutCart, { loading: checkoutLoading }] = useMutation(CHECKOUT_CART, {
-    onCompleted: () => {
-      refetch();
-      alert("Checkout successful!");
-    },
-    onError: (err) => alert(`Checkout failed: ${err.message}`),
+  const [clearCart] = useMutation(CLEAR_CART, {
+    onCompleted: () => refetch(),
   });
+
+  const [checkoutCart, { loading: checkoutLoading }] =
+    useMutation(CHECKOUT_CART);
+
+  const [createCashfreeOrder] =
+    useMutation(CREATE_CASHFREE_ORDER);
+
+  // ------------------ Handlers ------------------
 
   const handleQuantityChange = (item, change) => {
     setLoadingItemId(item.dishId);
@@ -119,8 +148,7 @@ export default function CartScreen() {
         price: item.price,
         imageUrl: item.imageUrl,
         quantity: change,
-        userName: userName,
-
+        userName,
       },
     });
   };
@@ -130,10 +158,46 @@ export default function CartScreen() {
     clearCart({ variables: { userId } });
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!userId) return alert("Please login first");
-    checkoutCart({ variables: { userId } });
+
+    try {
+      // ✅ Existing checkout logic
+      const checkoutRes = await checkoutCart({
+        variables: { userId },
+      });
+
+      const {
+        internalOrderId,
+        restaurantId,
+        total,
+      } = checkoutRes.data.checkoutCart;
+
+      // ✅ Create Cashfree order
+      const cfRes = await createCashfreeOrder({
+        variables: {
+          restaurantId,
+          internalOrderId,
+          total,
+        },
+      });
+
+      const paymentSessionId =
+        cfRes.data.createCashfreeOrder.paymentSessionId;
+
+      // ✅ Open Cashfree Web Checkout
+      const url = `https://sandbox.cashfree.com/pg/view/sessions/checkout/web/${paymentSessionId}`;
+
+      setPaymentUrl(url);
+      setShowWebView(true);
+
+    } catch (err) {
+      console.error(err);
+      alert("Payment failed to start");
+    }
   };
+
+  // ------------------ UI ------------------
 
   if (loading || meLoading) {
     return (
@@ -171,18 +235,21 @@ export default function CartScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }}
         renderItem={({ item }) => (
           <View className="flex-row bg-gray-50 rounded-2xl p-4 mb-4 items-center shadow-lg border border-gray-200">
-            {/* Image */}
-            <Image source={{ uri: item.imageUrl }} className="w-[60px] h-[60px] rounded-lg" />
+            <Image
+              source={{ uri: item.imageUrl }}
+              className="w-[60px] h-[60px] rounded-lg"
+            />
 
-            {/* Middle text (name & price) */}
             <View className="flex-1 ml-3">
-              <Text className="text-base font-semibold text-gray-800">{item.dishName}</Text>
-              <Text className="text-sm text-pink-600 font-medium mt-1">₹{item.price}</Text>
+              <Text className="text-base font-semibold text-gray-800">
+                {item.dishName}
+              </Text>
+              <Text className="text-sm text-pink-600 font-medium mt-1">
+                ₹{item.price}
+              </Text>
             </View>
 
-            {/* Right controls */}
             <View className="flex-row items-center">
-              {/* Decrease */}
               <TouchableOpacity
                 onPress={() => handleQuantityChange(item, -1)}
                 disabled={loadingItemId === item.dishId}
@@ -194,10 +261,11 @@ export default function CartScreen() {
               {loadingItemId === item.dishId ? (
                 <ActivityIndicator size="small" color="#f97316" className="mx-3" />
               ) : (
-                <Text className="mx-3 text-base font-medium text-gray-700">{item.quantity}</Text>
+                <Text className="mx-3 text-base font-medium text-gray-700">
+                  {item.quantity}
+                </Text>
               )}
 
-              {/* Increase */}
               <TouchableOpacity
                 onPress={() => handleQuantityChange(item, 1)}
                 disabled={loadingItemId === item.dishId}
@@ -220,10 +288,31 @@ export default function CartScreen() {
           {checkoutLoading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text className="text-center text-white text-lg font-semibold">Checkout</Text>
+            <Text className="text-center text-white text-lg font-semibold">
+              Checkout
+            </Text>
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Cashfree WebView */}
+      <Modal visible={showWebView} animationType="slide">
+        <SafeAreaView className="flex-1 bg-white">
+          <TouchableOpacity
+            onPress={() => {setShowWebView(false) 
+              refetch() }}
+            className="p-4 bg-red-500"
+          >
+            <Text className="text-white text-center font-semibold">
+              Close Payment
+            </Text>
+          </TouchableOpacity>
+
+          {paymentUrl && (
+            <WebView source={{ uri: paymentUrl }} startInLoadingState />
+          )}
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
