@@ -73,9 +73,10 @@ const Reorder = () => {
   const [reorder] = useMutation(REORDER_MUTATION)
 
   // Fetch orders (only when userId is available)
-  const { data, loading, error } = useQuery(GET_ORDERS, {
+  const { data, loading, error, refetch } = useQuery(GET_ORDERS, {
     variables: { userId },
     skip: !userId,
+    pollInterval: 5000, // ✅ Refetch every 5 seconds to get status updates
   })
 
   // Handle loading & error states
