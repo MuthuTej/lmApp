@@ -19,6 +19,7 @@ const GET_ORDERS = gql`
   query GetOrders($userId: String!) {
     lastOrder(userId: $userId) {
       trackingOrders {
+        internalOrderId
         orderId
         items {
           dishName
@@ -31,6 +32,7 @@ const GET_ORDERS = gql`
         status
       }
       pastOrders {
+        internalOrderId
         orderId
         items {
           dishName
@@ -105,12 +107,17 @@ const Reorder = () => {
   const { trackingOrders, pastOrders } = data.lastOrder
 
   // Handle reorder
-  const handleReorder = async (orderId = null) => {
+  const handleReorder = async (orderId) => {
+    if (!orderId) {
+      Alert.alert("Error", "Cannot identify this order. internalOrderId is missing.");
+      return;
+    }
+
     try {
-      const variables = { userId };
-      if (orderId) {
-        variables.internalOrderId = orderId;
-      }
+      const variables = {
+        userId,
+        internalOrderId: orderId
+      };
 
       const res = await reorder({ variables });
       const data = res.data.reorder;
@@ -171,6 +178,7 @@ const Reorder = () => {
     }
   }
 
+
   // Convert status → progress
   const getProgress = (status) => {
     switch (status) {
@@ -216,7 +224,7 @@ const Reorder = () => {
           {/* Reorder button only for past orders */}
           {isPast && (
             <TouchableOpacity
-              onPress={() => handleReorder(order.orderId)}
+              onPress={() => handleReorder(order.internalOrderId)}
               className="bg-orange-500 px-4 py-2 mt-2 rounded-full self-start"
             >
               <Text className="text-white font-semibold text-xs">Reorder</Text>
