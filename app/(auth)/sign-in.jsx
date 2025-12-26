@@ -27,13 +27,23 @@ export default function SignIn({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+  const [loginError, setLoginError] = useState(null);
 
-  const [signIn, { loading, error }] = useMutation(SIGN_IN, {
-    onCompleted: async (data) => {
-      await AsyncStorage.setItem("token", data.signIn.token);
-      router.replace("/home");
-    },
-  });
+  const [signIn, { loading,error }] = useMutation(SIGN_IN, {
+  onCompleted: async (data) => {
+    await AsyncStorage.setItem("token", data.signIn.token);
+    router.replace("/home");
+  },
+  onError: (err) => {
+    if (err.message.includes("Invalid credentials")) {
+      setLoginError(true); // show forgot password
+    } else {
+      setLoginError(false); // other errors
+    }
+  },
+  
+});
+
 
   return (
     <LinearGradient colors={["#FFE5B4", "#FFDAB9"]} style={{ flex: 1 }}>
@@ -77,7 +87,7 @@ export default function SignIn({ navigation }) {
               <TextInput
                 placeholder="Email"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => { setEmail(text); setLoginError(false); }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 style={{
@@ -94,7 +104,7 @@ export default function SignIn({ navigation }) {
                 placeholder="Password"
                 secureTextEntry
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => { setPassword(text); setLoginError(false); }}
                 style={{
                   borderWidth: 1,
                   borderColor: "#FDBA74",
@@ -110,6 +120,23 @@ export default function SignIn({ navigation }) {
                   {error.message}
                 </Text>
               )}
+              {loginError && (
+              <TouchableOpacity
+                onPress={() => router.push("/forgot-password")} // navigate to ForgotPassword screen
+                style={{ marginBottom: 12 }}
+              >
+                <Text
+                  style={{
+                    color: "#F97316",
+                    textAlign: "center",
+                    fontWeight: "600",
+                    textDecorationLine: "underline",
+                  }}
+                >
+                  Forgot Password?
+                </Text>
+              </TouchableOpacity>
+            )}
 
               <TouchableOpacity
                 onPress={() => signIn({ variables: { email, password } })}
