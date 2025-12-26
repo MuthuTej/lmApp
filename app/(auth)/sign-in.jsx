@@ -7,12 +7,13 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
-  SafeAreaView,
+  ImageBackground,
+  Image
 } from "react-native";
 import { useMutation, gql } from "@apollo/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
 
 const SIGN_IN = gql`
   mutation SignIn($email: String!, $password: String!) {
@@ -23,9 +24,10 @@ const SIGN_IN = gql`
   }
 `;
 
-export default function SignIn({ navigation }) {
+export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const [signIn, { loading, error }] = useMutation(SIGN_IN, {
@@ -36,117 +38,111 @@ export default function SignIn({ navigation }) {
   });
 
   return (
-    <LinearGradient colors={["#FFE5B4", "#FFDAB9"]} style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
+    <View className="flex-1 bg-white">
+      <ImageBackground
+        source={require('../../assets/college-bg.jpeg')}
+        className="flex-1 justify-end"
+        resizeMode="cover"
+      >
+        <View className="absolute inset-0 bg-black/40" />
+
+        {/* Back Button */}
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="absolute top-12 left-4 z-50 flex-row items-center"
+        >
+          <Ionicons name="chevron-back" size={24} color="white" />
+          <Text className="text-white font-semibold text-lg ml-1">Back</Text>
+        </TouchableOpacity>
+
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
+          className="flex-1 justify-end"
         >
           <ScrollView
-            contentContainerStyle={{
-              flexGrow: 1,
-              justifyContent: "center",
-              paddingHorizontal: 20,
-            }}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
             keyboardShouldPersistTaps="handled"
           >
-            <View
-              style={{
-                backgroundColor: "white",
-                borderRadius: 20,
-                padding: 20,
-                shadowColor: "#000",
-                shadowOpacity: 0.1,
-                shadowOffset: { width: 0, height: 2 },
-                shadowRadius: 8,
-                elevation: 4,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontWeight: "bold",
-                  textAlign: "center",
-                  color: "#F97316",
-                  marginBottom: 16,
-                }}
-              >
-                Welcome Back
+            {/* White Container */}
+            <View className="bg-white rounded-t-3xl p-8 pt-10 min-h-[60%]">
+
+              <Text className="text-3xl font-bold text-center text-gray-900 mt-2 mb-2">
+                Welcome Back!
+              </Text>
+              <Text className="text-gray-500 text-center mb-8">
+                Welcome back! Let's cook up something amazing again
               </Text>
 
-              <TextInput
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#FDBA74",
-                  borderRadius: 10,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  marginBottom: 12,
-                }}
-              />
+              {/* Email Input */}
+              <View className="mb-4">
+                <TextInput
+                  placeholder="Enter Your Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  className="bg-pink-50 border border-pink-100 rounded-xl px-4 py-4 text-gray-800"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
 
-              <TextInput
-                placeholder="Password"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#FDBA74",
-                  borderRadius: 10,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  marginBottom: 12,
-                }}
-              />
+              {/* Password Input */}
+              <View className="mb-4 relative">
+                <TextInput
+                  placeholder="Password"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                  className="bg-pink-50 border border-pink-100 rounded-xl px-4 py-4 text-gray-800 pr-12"
+                  placeholderTextColor="#9CA3AF"
+                />
+                <TouchableOpacity
+                  className="absolute right-4 top-4"
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="gray" />
+                </TouchableOpacity>
+              </View>
+
+              <View className="flex-row justify-between items-center mb-6">
+                {/* Dummy Checkbox */}
+                <TouchableOpacity className="flex-row items-center">
+                  <View className="w-5 h-5 border border-pink-300 rounded mr-2" />
+                  <Text className="text-gray-500 text-sm">Remember me</Text>
+                </TouchableOpacity>
+                <TouchableOpacity>
+                  <Text className="text-gray-500 text-sm">Forgot Password</Text>
+                </TouchableOpacity>
+              </View>
 
               {error && (
-                <Text style={{ color: "red", textAlign: "center", marginBottom: 10 }}>
+                <Text className="text-red-500 text-center mb-4">
                   {error.message}
                 </Text>
               )}
 
-              <TouchableOpacity
+              {/* Sign In Button */}
+              <TouchableOpacity // Sign In Action
                 onPress={() => signIn({ variables: { email, password } })}
-                style={{
-                  backgroundColor: "#FB923C",
-                  borderRadius: 10,
-                  paddingVertical: 14,
-                  marginBottom: 12,
-                }}
+                className="bg-pink-400 rounded-full py-4 mb-8 shadow-md items-center justify-center"
               >
-                <Text
-                  style={{
-                    color: "white",
-                    textAlign: "center",
-                    fontWeight: "bold",
-                    fontSize: 18,
-                  }}
-                >
+                <Text className="text-white font-bold text-lg">
                   {loading ? "Signing in..." : "Sign In"}
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-                <Text
-                  style={{
-                    color: "#F97316",
-                    textAlign: "center",
-                    fontWeight: "600",
-                  }}
-                >
-                  Don’t have an account? Sign Up
-                </Text>
-              </TouchableOpacity>
+              {/* Toggle */}
+              <View className="flex-row justify-center pb-8">
+                <Text className="text-gray-500">Don't Have Account </Text>
+                <TouchableOpacity onPress={() => router.push("/sign-up")}>
+                  <Text className="font-bold text-gray-900">Sign Up</Text>
+                </TouchableOpacity>
+              </View>
+
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </SafeAreaView>
-    </LinearGradient>
+      </ImageBackground>
+    </View>
   );
 }
