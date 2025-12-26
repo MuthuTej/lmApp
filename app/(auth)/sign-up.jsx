@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, Alert, ImageBackground, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, gql } from '@apollo/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -55,9 +56,10 @@ export default function SignUp() {
   return (
     <View className="flex-1 bg-white">
       <ImageBackground
-        source={require('../../assets/college-bg.jpeg')}
+        source={require('../../assets/logbg2.jpg')}
         className="flex-1 justify-end"
         resizeMode="cover"
+        imageStyle={{ top: -10 }}
       >
         <View className="absolute inset-0 bg-black/40" />
 
@@ -70,95 +72,97 @@ export default function SignUp() {
           <Text className="text-white font-semibold text-lg ml-1">Back</Text>
         </TouchableOpacity>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1 justify-end"
-        >
-          <ScrollView
-            contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
-            keyboardShouldPersistTaps="handled"
+        <SafeAreaView className="flex-1" edges={['top', 'left', 'right']}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            className="flex-1 justify-end"
           >
-            {/* White Container */}
-            <View className="bg-white rounded-t-3xl p-8 pt-10 min-h-[70%]">
+            <ScrollView
+              contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* White Container */}
+              <View className="bg-white/90 rounded-t-3xl p-8 pt-10 backdrop-blur-sm">
 
-              <Text className="text-3xl font-bold text-center text-gray-900 mt-2 mb-2">
-                Create Your Account
-              </Text>
-              <Text className="text-gray-500 text-center mb-8 px-4">
-                Let's fill your plate with creativity and connection
-              </Text>
+                <Text className="text-4xl font-black text-center text-neutral-900 mb-1 tracking-tight">
+                  Create Your Account
+                </Text>
+                <Text className="text-lg text-center text-neutral-500 mb-8 font-light tracking-wide italic">
+                  Let's fill your plate with creativity and connection
+                </Text>
 
-              {/* Name Input */}
-              <View className="mb-4">
-                <TextInput
-                  placeholder="Enter Full Name"
-                  value={name}
-                  onChangeText={setName}
-                  className="bg-pink-50 border border-pink-100 rounded-xl px-4 py-4 text-gray-800"
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
+                {/* Name Input */}
+                <View className="mb-4">
+                  <TextInput
+                    placeholder="Enter Full Name"
+                    value={name}
+                    onChangeText={setName}
+                    className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-4 text-gray-800"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
 
-              {/* Email Input */}
-              <View className="mb-4">
-                <TextInput
-                  placeholder="Enter Email"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  className="bg-pink-50 border border-pink-100 rounded-xl px-4 py-4 text-gray-800"
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
+                {/* Email Input */}
+                <View className="mb-4">
+                  <TextInput
+                    placeholder="Enter Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-4 text-gray-800"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
 
-              {/* Password Input */}
-              <View className="mb-4 relative">
-                <TextInput
-                  placeholder="Password"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
-                  className="bg-pink-50 border border-pink-100 rounded-xl px-4 py-4 text-gray-800 pr-12"
-                  placeholderTextColor="#9CA3AF"
-                />
+                {/* Password Input */}
+                <View className="mb-4 relative">
+                  <TextInput
+                    placeholder="Password"
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={setPassword}
+                    className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-4 text-gray-800 pr-12"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity
+                    className="absolute right-4 top-4"
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="gray" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Error Message */}
+                {error && (
+                  <Text className="text-red-500 text-center mb-4">
+                    {error.message}
+                  </Text>
+                )}
+
+                {/* Get Started Button */}
                 <TouchableOpacity
-                  className="absolute right-4 top-4"
-                  onPress={() => setShowPassword(!showPassword)}
+                  onPress={handleSignUp}
+                  className="bg-[#f66c3a] rounded-full py-4 mb-8 shadow-md items-center justify-center mt-2"
                 >
-                  <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="gray" />
+                  <Text className="text-white font-bold text-lg">
+                    {loading ? 'Creating...' : 'Get Started'}
+                  </Text>
                 </TouchableOpacity>
+
+                {/* Toggle */}
+                <View className="flex-row justify-center mb-8">
+                  <Text className="text-gray-500">Already Have An account?</Text>
+                  <TouchableOpacity onPress={() => router.push("/sign-in")}>
+                    <Text className="font-bold text-gray-900 ml-1">Login</Text>
+                  </TouchableOpacity>
+                </View>
+
               </View>
-
-              {/* Error Message */}
-              {error && (
-                <Text className="text-red-500 text-center mb-4">
-                  {error.message}
-                </Text>
-              )}
-
-              {/* Get Started Button */}
-              <TouchableOpacity
-                onPress={handleSignUp}
-                className="bg-pink-400 rounded-full py-4 mb-8 shadow-md items-center justify-center mt-2"
-              >
-                <Text className="text-white font-bold text-lg">
-                  {loading ? 'Creating...' : 'Get Started'}
-                </Text>
-              </TouchableOpacity>
-
-              {/* Toggle */}
-              <View className="flex-row justify-center mb-8">
-                <Text className="text-gray-500">Already Have An account?</Text>
-                <TouchableOpacity onPress={() => router.push("/sign-in")}>
-                  <Text className="font-bold text-gray-900 ml-1">Login</Text>
-                </TouchableOpacity>
-              </View>
-
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </ImageBackground>
-    </View>
+    </View >
   );
 }

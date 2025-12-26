@@ -47,31 +47,39 @@ export default function Page() {
 
           {/* Logo / Icon Placeholder */}
           <View className="items-center mb-4">
-            <View className="w-24 h-24 bg-black rounded-full items-center justify-center mb-2 shadow-lg">
-              <Text className="text-white text-5xl font-extrabold">G</Text>
+            <View className="w-24 h-24 rounded-full overflow-hidden shadow-lg mb-2 bg-[#f66c3a]">
+              <Image
+                source={require('../assets/minilogo.png')} // or { uri: 'https://...' }
+                className="w-full h-full"
+                resizeMode="contain"
+              />
             </View>
           </View>
 
-          <Text className="text-4xl font-extrabold text-center text-neutral-900 mb-1 tracking-tight">
+
+
+          <Text className="text-4xl font-black text-center text-neutral-900 mb-1 tracking-tight">
             GrabIt
           </Text>
 
-          <Text className="text-lg text-center text-neutral-500 mb-8 font-semibold">
+          <Text className="text-lg text-center text-neutral-500 mb-8 font-light tracking-wide italic">
             Taste, share, and inspire
           </Text>
 
+
           <TouchableOpacity
             onPress={() => router.push('/(auth)/sign-up')}
-            className="bg-neutral-900 rounded-full py-4 mb-4 shadow-xl items-center justify-center"
+            className="bg-[#f66c3a] rounded-full py-4 mb-4 shadow-xl items-center justify-center"
           >
             <Text className="text-white font-bold text-lg tracking-wide">
               Create account
             </Text>
           </TouchableOpacity>
 
+
           <TouchableOpacity
             onPress={() => router.push('/(auth)/sign-in')}
-            className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-full py-4 items-center justify-center shadow-lg"
+            className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-full py-4 items-center justify-center shadow-lg border-2 border-[#f66c3a]"
           >
             <Text className="text-white font-bold text-lg tracking-wide">
               Log In
@@ -80,8 +88,11 @@ export default function Page() {
 
 
 
+
+
         </View>
-      </ImageBackground>
-    </View>
+
+      </ImageBackground >
+    </View >
   );
 }
