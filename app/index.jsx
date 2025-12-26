@@ -1,34 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useRouter, useRootNavigationState } from 'expo-router';
 
 export default function Page() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const rootNavigationState = useRootNavigationState();
 
   useEffect(() => {
+    // ⛔ Wait until root layout is mounted
+    if (!rootNavigationState?.key) return;
+
     const checkAuth = async () => {
       const token = await AsyncStorage.getItem('token');
+
       if (token) {
-        // User already logged in → go to main tabs
-        router.replace('/home');
+       router.replace("/(tabs)/home");
+
       } else {
-        // No token → go to sign in
-        router.replace('/sign-in'); // NOT /auth/sign-in
+        router.replace("/(auth)/sign-in");
+
       }
+
       setLoading(false);
     };
+
     checkAuth();
-  }, []);
+  }, [rootNavigationState]);
 
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  return null; // No UI here since we redirect
+  return (
+    <View className="flex-1 items-center justify-center bg-gray-50">
+      <ActivityIndicator size="large" />
+    </View>
+  );
 }

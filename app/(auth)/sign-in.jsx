@@ -7,12 +7,15 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useMutation, gql } from "@apollo/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+
+// 🔔 Push notifications
+import { registerForPushNotifications } from "../../utils/notifications";
 
 const SIGN_IN = gql`
   mutation SignIn($email: String!, $password: String!) {
@@ -23,15 +26,38 @@ const SIGN_IN = gql`
   }
 `;
 
-export default function SignIn({ navigation }) {
+export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
 
   const [signIn, { loading, error }] = useMutation(SIGN_IN, {
     onCompleted: async (data) => {
-      await AsyncStorage.setItem("token", data.signIn.token);
-      router.replace("/home");
+      try {
+        // 1️⃣ Save auth token
+        await AsyncStorage.setItem("token", data.signIn.token);
+
+        // 2️⃣ Register push notifications (OPTION 1)
+        const pushToken = await registerForPushNotifications();
+        console.log("🔥 EXPO PUSH TOKEN AFTER LOGIN:", pushToken);
+
+        // 3️⃣ (Optional) Send token to backend
+        if (pushToken) {
+          await fetch("https://your-backend.com/save-push-token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: data.signIn.userId,
+              expoPushToken: pushToken,
+            }),
+          });
+        }
+
+        // 4️⃣ Navigate into tabs (CRITICAL)
+        router.replace("/(tabs)/home");
+      } catch (err) {
+        console.error("Login flow error:", err);
+      }
     },
   });
 
@@ -106,13 +132,21 @@ export default function SignIn({ navigation }) {
               />
 
               {error && (
-                <Text style={{ color: "red", textAlign: "center", marginBottom: 10 }}>
+                <Text
+                  style={{
+                    color: "red",
+                    textAlign: "center",
+                    marginBottom: 10,
+                  }}
+                >
                   {error.message}
                 </Text>
               )}
 
               <TouchableOpacity
-                onPress={() => signIn({ variables: { email, password } })}
+                onPress={() =>
+                  signIn({ variables: { email, password } })
+                }
                 style={{
                   backgroundColor: "#FB923C",
                   borderRadius: 10,
@@ -132,7 +166,9 @@ export default function SignIn({ navigation }) {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+              <TouchableOpacity
+                onPress={() => router.push("/(auth)/sign-up")}
+              >
                 <Text
                   style={{
                     color: "#F97316",

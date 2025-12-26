@@ -156,21 +156,22 @@ const Home = () => {
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row">
-              {foodCategories.map((category) => (
-                <TouchableOpacity
-                  key={category.id}
-                  className="items-center mr-6"
-                >
-                  <Image
-                    source={category.image}
-                    className="w-20 h-20 mb-2"
-                    resizeMode="contain"
-                  />
-                  <Text className="text-gray-700 text-sm font-medium">
-                    {category.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+             {foodCategories.map((category) => (
+  <TouchableOpacity
+    key={category.id}
+    className="items-center mr-6"
+  >
+    <Image
+      source={category.image}
+      className="w-20 h-20 mb-2"
+      resizeMode="contain"
+    />
+    <Text className="text-gray-700 text-sm font-medium">
+      {category.name}
+    </Text>
+  </TouchableOpacity>
+))}
+
             </View>
           </ScrollView>
         </View>
