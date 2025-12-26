@@ -75,17 +75,17 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
 
   const [qty, setQty] = useState(1);
   const [addToCartMutation, { loading }] = useMutation(ADD_TO_CART, {
-    refetchQueries: [
-      { query: GET_CART, variables: { userId } } // re-fetch cart
-    ],
+    refetchQueries: userId
+      ? [{ query: GET_CART, variables: { userId } }]
+      : [],
     awaitRefetchQueries: true,
   });
 
   if (!dish) return null;
 
   const handleAddToCart = async () => {
-    if (!userId) {
-      alert('You must be logged in to add items to your cart.');
+     if (!userId || !restaurant?.name || !dish?.name) {
+      alert("Missing user, restaurant, or dish ID");
       return;
     }
 
@@ -105,17 +105,22 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
       setQty(1);
       onClose();
     } catch (err) {
-      console.error("GraphQL Error:", JSON.stringify(err, null, 2));
-      alert(err.message);
+      const message =
+        err?.graphQLErrors?.[0]?.message ||
+        err.message ||
+        "Unable to add item";
+
+      if (message.includes("not available")) {
+        alert("This item is currently unavailable.");
+      } else if (message.includes("not found")) {
+        alert("This item is no longer on the menu.");
+      } else {
+        alert(message);
+      }
     }
   };
   console.log(userId, restaurant.name, dish.name);
-
-  if (!userId || !restaurant?.name || !dish?.name) {
-
-    alert("Missing user, restaurant, or dish ID");
-    return;
-  }
+  if (!visible || !dish) return null;
 
   return (
 

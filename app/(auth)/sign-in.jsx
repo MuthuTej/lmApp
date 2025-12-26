@@ -30,13 +30,23 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const [loginError, setLoginError] = useState(null);
 
-  const [signIn, { loading, error }] = useMutation(SIGN_IN, {
-    onCompleted: async (data) => {
-      await AsyncStorage.setItem("token", data.signIn.token);
-      router.replace("/home");
-    },
-  });
+  const [signIn, { loading,error }] = useMutation(SIGN_IN, {
+  onCompleted: async (data) => {
+    await AsyncStorage.setItem("token", data.signIn.token);
+    router.replace("/home");
+  },
+  onError: (err) => {
+    if (err.message.includes("Invalid credentials")) {
+      setLoginError(true); // show forgot password
+    } else {
+      setLoginError(false); // other errors
+    }
+  },
+  
+});
+
 
   return (
     <View className="flex-1 bg-white">
@@ -125,7 +135,23 @@ export default function SignIn() {
                     {error.message}
                   </Text>
                 )}
-
+ {loginError && (
+              <TouchableOpacity
+                onPress={() => router.push("/forgot-password")} // navigate to ForgotPassword screen
+                style={{ marginBottom: 12 }}
+              >
+                <Text
+                  style={{
+                    color: "#F97316",
+                    textAlign: "center",
+                    fontWeight: "600",
+                    textDecorationLine: "underline",
+                  }}
+                >
+                  Forgot Password?
+                </Text>
+              </TouchableOpacity>
+            )}
                 {/* Sign In Button */}
                 <TouchableOpacity // Sign In Action
                   onPress={() => signIn({ variables: { email, password } })}
