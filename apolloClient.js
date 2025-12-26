@@ -3,9 +3,7 @@ import { ApolloClient, InMemoryCache, HttpLink, ApolloLink } from '@apollo/clien
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const httpLink = new HttpLink({
-  //uri: 'https://lm-backend-zrtl.onrender.com/graphql',
-  // uri: 'http://192.168.1.7:4000/graphql',
-  uri: 'http://192.168.2.46:4000/graphql',
+  uri: 'https://lm-backend-zrtl.onrender.com/graphql',
 });
 
 const authLink = new ApolloLink((operation, forward) => {
