@@ -19,6 +19,7 @@ const GET_ORDERS = gql`
   query GetOrders($userId: String!) {
     lastOrder(userId: $userId) {
       trackingOrders {
+        internalOrderId
         orderId
         items {
           dishName
@@ -31,6 +32,7 @@ const GET_ORDERS = gql`
         status
       }
       pastOrders {
+        internalOrderId
         orderId
         items {
           dishName
@@ -48,17 +50,25 @@ const GET_ORDERS = gql`
 
 // Reorder mutation
 const REORDER_MUTATION = gql`
-  mutation Reorder($userId: String!, $forceAdd: Boolean) {
-    reorder(userId: $userId, forceAdd: $forceAdd) {
+  mutation Reorder($userId: String!, $internalOrderId: String, $forceAdd: Boolean) {
+    reorder(
+      userId: $userId
+      internalOrderId: $internalOrderId
+      forceAdd: $forceAdd
+    ) {
       status
       availableItems {
+        dishId
         dishName
         price
         quantity
         imageUrl
       }
       unavailableItems {
+        dishId
         dishName
+        price
+        imageUrl
       }
     }
   }
@@ -97,12 +107,22 @@ const Reorder = () => {
   const { trackingOrders, pastOrders } = data.lastOrder
 
   // Handle reorder
-  const handleReorder = async () => {
+  const handleReorder = async (orderId) => {
+    if (!orderId) {
+      Alert.alert("Error", "Cannot identify this order. internalOrderId is missing.");
+      return;
+    }
+
     try {
-      const res = await reorder({ variables: { userId } });
+      const variables = {
+        userId,
+        internalOrderId: orderId
+      };
+
+      const res = await reorder({ variables });
       const data = res.data.reorder;
 
-      // 🟢 All items available
+      // 🟢 All items available (or successfully added)
       if (data.status === "ALL_AVAILABLE") {
         Alert.alert("Reorder added", "Items have been added to your cart");
         return;
@@ -112,7 +132,7 @@ const Reorder = () => {
       if (data.status === "NO_ITEMS_AVAILABLE") {
         Alert.alert(
           "Items unavailable",
-          "None of the items from your last order are currently available."
+          "None of the items from this order are currently available."
         );
         return;
       }
@@ -131,11 +151,16 @@ const Reorder = () => {
             {
               text: "Add Available Items",
               onPress: async () => {
+                const retryVariables = {
+                  userId,
+                  forceAdd: true
+                };
+                if (orderId) {
+                  retryVariables.internalOrderId = orderId;
+                }
+
                 await reorder({
-                  variables: {
-                    userId,
-                    forceAdd: true
-                  }
+                  variables: retryVariables
                 });
 
                 Alert.alert(
@@ -152,6 +177,7 @@ const Reorder = () => {
       Alert.alert("Error", "Failed to reorder. Please try again.");
     }
   }
+
 
   // Convert status → progress
   const getProgress = (status) => {
@@ -198,7 +224,7 @@ const Reorder = () => {
           {/* Reorder button only for past orders */}
           {isPast && (
             <TouchableOpacity
-              onPress={handleReorder}
+              onPress={() => handleReorder(order.internalOrderId)}
               className="bg-orange-500 px-4 py-2 mt-2 rounded-full self-start"
             >
               <Text className="text-white font-semibold text-xs">Reorder</Text>
@@ -213,8 +239,14 @@ const Reorder = () => {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {/* Tracking Orders */}
-        <View className="mb-4">
+        <View className="flex-row justify-between items-center mb-4">
           <Text className="text-xl font-bold text-gray-800">Tracking Orders</Text>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            className="bg-gray-100 px-3 py-1 rounded-full border border-gray-300"
+          >
+            <Text className="text-xs font-medium text-gray-600">Refresh</Text>
+          </TouchableOpacity>
         </View>
 
         {trackingOrders.length > 0
