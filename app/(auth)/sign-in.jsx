@@ -33,20 +33,20 @@ export default function SignIn() {
   const insets = useSafeAreaInsets();
   const [loginError, setLoginError] = useState(null);
 
-  const [signIn, { loading,error }] = useMutation(SIGN_IN, {
-  onCompleted: async (data) => {
-    await AsyncStorage.setItem("token", data.signIn.token);
-    router.replace("/home");
-  },
-  onError: (err) => {
-    if (err.message.includes("Invalid credentials")) {
-      setLoginError(true); // show forgot password
-    } else {
-      setLoginError(false); // other errors
-    }
-  },
-  
-});
+  const [signIn, { loading, error }] = useMutation(SIGN_IN, {
+    onCompleted: async (data) => {
+      await AsyncStorage.setItem("token", data.signIn.token);
+      router.replace("/home");
+    },
+    onError: (err) => {
+      if (err.message.includes("Invalid credentials")) {
+        setLoginError(true); // show forgot password
+      } else {
+        setLoginError(false); // other errors
+      }
+    },
+
+  });
 
 
   return (
@@ -71,13 +71,15 @@ export default function SignIn() {
         </TouchableOpacity>
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1 justify-end"
+          behavior="padding"
+          className="flex-1"
         >
           <ScrollView
-            contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
+            className="flex-1"
+            contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
           >
+            <View className="flex-1" />
             {/* White Container */}
             <View
               className="bg-white/90 rounded-t-3xl p-8 pt-10 backdrop-blur-sm"
@@ -141,23 +143,23 @@ export default function SignIn() {
                   {error.message}
                 </Text>
               )}
-{loginError && (
-              <TouchableOpacity
-                onPress={() => router.push("/forgot-password")} // navigate to ForgotPassword screen
-                style={{ marginBottom: 12 }}
-              >
-                <Text
-                  style={{
-                    color: "#F97316",
-                    textAlign: "center",
-                    fontWeight: "600",
-                    textDecorationLine: "underline",
-                  }}
+              {loginError && (
+                <TouchableOpacity
+                  onPress={() => router.push("/forgot-password")} // navigate to ForgotPassword screen
+                  style={{ marginBottom: 12 }}
                 >
-                  Forgot Password?
-                </Text>
-              </TouchableOpacity>
-            )}
+                  <Text
+                    style={{
+                      color: "#F97316",
+                      textAlign: "center",
+                      fontWeight: "600",
+                      textDecorationLine: "underline",
+                    }}
+                  >
+                    Forgot Password?
+                  </Text>
+                </TouchableOpacity>
+              )}
               {/* Sign In Button */}
               <TouchableOpacity // Sign In Action
                 onPress={() => signIn({ variables: { email, password } })}
