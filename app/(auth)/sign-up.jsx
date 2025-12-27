@@ -7,8 +7,20 @@ import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 
 const SIGN_UP = gql`
-  mutation SignUp($email: String!, $password: String!, $name: String!) {
-    signUp(email: $email, password: $password, name: $name) {
+  mutation SignUp(
+    $email: String!, 
+    $password: String!, 
+    $name: String!, 
+    $mobileNumber: String!, 
+    $registerNumber: String!
+  ) {
+    signUp(
+      email: $email, 
+      password: $password, 
+      name: $name, 
+      mobileNumber: $mobileNumber, 
+      registerNumber: $registerNumber
+    ) {
       token
       userId
     }
@@ -19,6 +31,8 @@ export default function SignUp() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [mobileNumber, setMobileNumber] = useState('');
+    const [registerNumber, setRegisterNumber] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -43,15 +57,20 @@ export default function SignUp() {
         I'll keep standard validation (empty check).
         */
 
-        if (!name.trim()) {
-            Alert.alert('Missing Name', 'Please enter your full name.');
+        if (!name.trim() || !email.trim() || !password.trim() || !mobileNumber.trim() || !registerNumber.trim()) {
+            Alert.alert('Missing Fields', 'Please fill in all fields (Name, Email, Password, Mobile, and Register Number).');
             return;
         }
-        if (!email.trim() || !password.trim()) {
-            Alert.alert('Missing Fields', 'Please fill in all fields.');
-            return;
-        }
-        signUp({ variables: { email, password, name } });
+
+        signUp({
+            variables: {
+                email,
+                password,
+                name,
+                mobileNumber,
+                registerNumber
+            }
+        });
     };
 
     return (
@@ -104,6 +123,29 @@ export default function SignUp() {
                                     placeholder="Enter Full Name"
                                     value={name}
                                     onChangeText={setName}
+                                    className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-4 text-gray-800"
+                                    placeholderTextColor="#9CA3AF"
+                                />
+                            </View>
+
+                            {/* Mobile Number Input */}
+                            <View className="mb-4">
+                                <TextInput
+                                    placeholder="Enter Mobile Number"
+                                    value={mobileNumber}
+                                    onChangeText={setMobileNumber}
+                                    keyboardType="phone-pad"
+                                    className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-4 text-gray-800"
+                                    placeholderTextColor="#9CA3AF"
+                                />
+                            </View>
+
+                            {/* Register Number Input */}
+                            <View className="mb-4">
+                                <TextInput
+                                    placeholder="Enter Register Number"
+                                    value={registerNumber}
+                                    onChangeText={setRegisterNumber}
                                     className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-4 text-gray-800"
                                     placeholderTextColor="#9CA3AF"
                                 />
