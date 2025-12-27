@@ -6,7 +6,6 @@ import {
   Dimensions,
   TouchableOpacity,
   TextInput,
-  StyleSheet,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,7 +14,6 @@ import DishModal from "../../components/DishModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Loader from "../../components/Loader";
 import { gql, useQuery } from "@apollo/client";
-import { LinearGradient } from "expo-linear-gradient";
 
 const screenWidth = Dimensions.get("window").width;
 const cardGap = 20;
@@ -56,7 +54,7 @@ export default function RestaurantScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+    <View className="flex-1 bg-gray-50">
       <FlatList
         ListHeaderComponent={
           <RestaurantHeader
@@ -74,15 +72,18 @@ export default function RestaurantScreen() {
             item={item}
             index={index}
             variant="grid"
-            cardWidth={screenWidth / 2.27}
+            cardWidth={screenWidth / 2.22}
             showRank={false}
             onPress={() => setSelectedDish(item)}
           />
         )}
         columnWrapperStyle={{
-          justifyContent: "flex-start",
-          gap: cardGap,
-          marginBottom: 10,
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+        }}
+        contentContainerStyle={{
+          paddingBottom: 20,
+          gap: 16,
         }}
       />
 
@@ -92,136 +93,51 @@ export default function RestaurantScreen() {
         restaurant={restaurant}
         onClose={() => setSelectedDish(null)}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const RestaurantHeader = ({ restaurant, searchQuery, setSearchQuery }) => (
-  <View style={{ marginBottom: 20 }}>
-    <LinearGradient
-      colors={["#F5CB58", "#F5CB58"]} // solid warm yellow
-      style={styles.headerContainer}
-    >
-      {/* Top Row: Arrow + Centered Name & Status */}
-      <View style={styles.headerRow}>
-        {/* Back Arrow */}
-        <TouchableOpacity onPress={() => router.back()} style={styles.arrowBtn}>
-          <Ionicons name="arrow-back" size={28} color="#f66c3a" />
-        </TouchableOpacity>
+  <View className="bg-orange-500 pt-14 pb-8 px-6 rounded-b-[32px] shadow-lg mb-6">
+    {/* Top Row: Back & Name */}
+    <View className="flex-row justify-between items-center mb-6">
+      <TouchableOpacity
+        onPress={() => router.back()}
+        className="bg-white/20 p-2 rounded-full"
+      >
+        <Ionicons name="arrow-back" size={24} color="white" />
+      </TouchableOpacity>
 
-        {/* Center: Restaurant Name and Status */}
-        <View style={styles.centerContainer}>
-          <Text style={styles.restaurantName}>{restaurant.name}</Text>
-          <View
-  style={[
-    styles.statusBadge,
-    {
-      borderColor: restaurant.isOpen ? "limegreen" : "red",
-      shadowColor: restaurant.isOpen ? "limegreen" : "red",
-    },
-  ]}
->
-  <Text
-    style={[
-      styles.statusText,
-      { color: restaurant.isOpen ? "limegreen" : "red" },
-    ]}
-  >
-    {restaurant.isOpen ? "OPEN NOW" : "CLOSED"}
-  </Text>
-</View>
-
+      <View className="items-center flex-1 mx-4">
+        <Text className="text-2xl font-bold text-white text-center tracking-tight" numberOfLines={1}>
+          {restaurant.name}
+        </Text>
+        <View className="flex-row items-center mt-1 bg-orange-600/50 px-3 py-0.5 rounded-full">
+          <View className={`w-2 h-2 rounded-full mr-1.5 ${restaurant.isOpen ? 'bg-green-400' : 'bg-red-400'}`} />
+          <Text className="text-white text-[10px] font-bold tracking-wide">
+            {restaurant.isOpen ? "OPEN NOW" : "CLOSED"}
+          </Text>
         </View>
-
-        {/* Empty view to balance layout */}
-        <View style={{ width: 28 }} />
       </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#aaa" />
-        <TextInput
-          placeholder="Search dishes..."
-          placeholderTextColor="#aaa"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          style={styles.searchInput}
-        />
-      </View>
-    </LinearGradient>
+      <View className="w-10" />
+    </View>
+
+    {/* Search Bar */}
+    <View className="bg-white rounded-2xl px-4 py-3 flex-row items-center shadow-sm">
+      <Ionicons name="search" size={20} color="#F97316" />
+      <TextInput
+        placeholder="Search for dishes..."
+        placeholderTextColor="#9CA3AF"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        className="flex-1 ml-3 text-gray-800 font-medium"
+      />
+      {searchQuery.length > 0 && (
+        <TouchableOpacity onPress={() => setSearchQuery("")}>
+          <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+        </TouchableOpacity>
+      )}
+    </View>
   </View>
 );
-
-const styles = StyleSheet.create({
-  headerContainer: {
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
-    paddingTop: 15,
-    backgroundColor: "#F5CB58",
-  },
-
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 15,
-  },
-
-  arrowBtn: {
-    width: 28,
-    alignItems: "flex-start",
-  },
-
-  centerContainer: {
-    flex: 1,
-    alignItems: "center",
-  },
-
-  restaurantName: {
-    fontSize: 36,
-    textTransform: "uppercase",
-    fontWeight: "bold",
-    color: "#f66c3a",
-    fontFamily: "Helvetica",
-    textShadowColor: "#000000",
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 3,
-  },
-  statusBadge: {
-  alignSelf: "center",
-  paddingHorizontal: 20,
-  paddingVertical: 8,
-  borderRadius: 25,
-  backgroundColor: "#F5CB58",
-  borderWidth: 2,
-  shadowOffset: { width: 0, height: 0 },
-  shadowOpacity: 0.9,
-  shadowRadius: 8,
-  elevation: 8,
-  marginTop:10,
-},
-
-statusText: {
-  fontSize: 14,
-  fontWeight: "bold",
-  textAlign: "center",
-},
-
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-  },
-
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
-    color: "#000",
-  },
-});

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  Modal,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -147,6 +148,8 @@ export default function CartScreen() {
   const [createCashfreeOrder] =
     useMutation(CREATE_CASHFREE_ORDER);
 
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
   // ------------------ Handlers ------------------
 
   const handleQuantityChange = (item, change) => {
@@ -172,6 +175,8 @@ export default function CartScreen() {
 
   const handleCheckout = async () => {
     if (!userId) return alert("Please login first");
+
+    setIsProcessingPayment(true);
 
     try {
       // ✅ Existing checkout logic
@@ -206,6 +211,8 @@ export default function CartScreen() {
     } catch (err) {
       console.error(err);
       alert("Payment failed to start");
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -228,62 +235,75 @@ export default function CartScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="flex-row justify-between items-center px-5 pt-12 pb-4">
-        <Text className="text-xl font-bold text-gray-800">Orders</Text>
-        <TouchableOpacity
-          onPress={handleClearAll}
-          className="bg-red-500 px-3 py-1 rounded-lg"
-        >
-          <Text className="text-white font-semibold">Clear all</Text>
-        </TouchableOpacity>
+      <View className="bg-orange-500 pt-12 pb-8 px-6 rounded-b-[32px] shadow-lg mb-6">
+        <View className="flex-row justify-between items-center">
+          <Text className="text-3xl font-bold text-white tracking-tight">My Cart</Text>
+          <TouchableOpacity
+            onPress={handleClearAll}
+            className="bg-white/20 px-4 py-2 rounded-full"
+          >
+            <Text className="text-white font-bold text-xs">Clear Cart</Text>
+          </TouchableOpacity>
+        </View>
+        <Text className="text-orange-100 text-sm mt-1 font-medium opacity-90">
+          {data?.getCart?.items?.length || 0} items waiting for you
+        </Text>
       </View>
 
       {/* Cart Items */}
       <FlatList
         data={data.getCart.items}
         keyExtractor={(item) => item.dishId}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <View className="flex-row bg-gray-50 rounded-2xl p-4 mb-4 items-center shadow-lg border border-gray-200">
+          <View className="flex-row bg-white rounded-2xl p-4 mb-4 items-center shadow-sm border border-gray-100">
             <Image
               source={{ uri: item.imageUrl }}
-              className="w-[60px] h-[60px] rounded-lg"
+              className="w-20 h-20 rounded-xl bg-gray-200"
+              resizeMode="cover"
             />
 
-            <View className="flex-1 ml-3">
-              <Text className="text-base font-semibold text-gray-800">
-                {item.dishName}
-              </Text>
-              <Text className="text-sm text-pink-600 font-medium mt-1">
-                ₹{item.price}
+            <View className="flex-1 ml-4 justify-between h-20 py-1">
+              <View>
+                <Text className="text-base font-bold text-gray-800 leading-tight" numberOfLines={2}>
+                  {item.dishName}
+                </Text>
+                <Text className="text-sm font-extrabold text-orange-600 mt-1">
+                  ₹{item.price * item.quantity}
+                </Text>
+              </View>
+
+              <Text className="text-[10px] text-gray-400 font-medium">
+                ₹{item.price} / item
               </Text>
             </View>
 
-            <View className="flex-row items-center">
+            <View className="flex-col items-center justify-between h-20 py-0.5 ml-2">
               <TouchableOpacity
-                onPress={() => handleQuantityChange(item, -1)}
+                onPress={() => handleQuantityChange(item, 1)}
                 disabled={loadingItemId === item.dishId}
-                className="bg-gray-200 w-8 h-8 rounded-full justify-center items-center"
+                className="bg-orange-500 w-7 h-7 rounded-full justify-center items-center shadow-sm"
               >
-                <Text className="text-lg font-bold text-gray-600">-</Text>
+                <Text className="text-lg font-bold text-white leading-5">+</Text>
               </TouchableOpacity>
 
               {loadingItemId === item.dishId ? (
-                <ActivityIndicator size="small" color="#f97316" className="mx-3" />
+                <ActivityIndicator size="small" color="#f97316" />
               ) : (
-                <Text className="mx-3 text-base font-medium text-gray-700">
+                <Text className="text-base font-bold text-gray-800">
                   {item.quantity}
                 </Text>
               )}
 
               <TouchableOpacity
-                onPress={() => handleQuantityChange(item, 1)}
+                onPress={() => handleQuantityChange(item, -1)}
                 disabled={loadingItemId === item.dishId}
-                className="bg-orange-500 w-8 h-8 rounded-full justify-center items-center"
+                className="bg-gray-100 w-7 h-7 rounded-full justify-center items-center border border-gray-200"
               >
-                <Text className="text-lg font-bold text-white">+</Text>
+                <Text className="text-lg font-bold text-gray-600 leading-5">-</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -291,28 +311,42 @@ export default function CartScreen() {
       />
 
       {/* Checkout Button */}
-      <View className="p-4 bg-white border-t border-gray-200 shadow-md">
-        <TouchableOpacity
-          onPress={handleCheckout}
-          disabled={checkoutLoading}
-          className="bg-orange-500 py-4 rounded-lg"
-        >
-          {checkoutLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text className="text-center text-white text-lg font-semibold">
-              Checkout
+      {data?.getCart?.items?.length > 0 && (
+        <View className="absolute bottom-0 left-0 right-0 p-5 bg-white rounded-t-3xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <View className="flex-row justify-between items-center mb-4 px-1">
+            <Text className="text-gray-500 font-medium text-sm">Total Amount</Text>
+            <Text className="text-2xl font-extrabold text-gray-900">
+              ₹{data.getCart.items.reduce((acc, item) => acc + (item.price * item.quantity), 0)}
             </Text>
-          )}
-        </TouchableOpacity>
-      </View>
+          </View>
+          <TouchableOpacity
+            onPress={handleCheckout}
+            disabled={checkoutLoading}
+            className="bg-orange-500 py-4 rounded-2xl shadow-lg shadow-orange-200 flex-row justify-center items-center"
+          >
+            {checkoutLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Text className="text-center text-white text-lg font-bold mr-2">
+                  Checkout Securely
+                </Text>
+                {/* Ionicons is imported but not defined in this scope yet, let's stick to text or verify import */}
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+
 
       {/* Cashfree WebView */}
       <Modal visible={showWebView} animationType="slide">
         <SafeAreaView className="flex-1 bg-white">
           <TouchableOpacity
-            onPress={() => {setShowWebView(false) 
-              refetch() }}
+            onPress={() => {
+              setShowWebView(false)
+              refetch()
+            }}
             className="p-4 bg-red-500"
           >
             <Text className="text-white text-center font-semibold">
@@ -325,6 +359,18 @@ export default function CartScreen() {
           )}
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+
+      {/* Payment Processing Loading Modal */}
+      <Modal visible={isProcessingPayment} transparent={true} animationType="fade">
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className="bg-white p-6 rounded-2xl items-center shadow-xl">
+            <ActivityIndicator size="large" color="#f97316" />
+            <Text className="text-gray-800 font-semibold mt-4 text-base">
+              Processing Payment...
+            </Text>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView >
   );
 }

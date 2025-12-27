@@ -1,70 +1,68 @@
 import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native"
 import { Link } from "expo-router"
-import MaskedView from "@react-native-masked-view/masked-view"
 
-export default function DishCard({ item, index = 0, cardWidth = 150, href, showRank, onPress }) {
-  const title = item.name ?? item.dishName
-  const imgSrc = item.imageUrl ?? item.image
-  const description = item.description ?? ""
-  const price = item.price ?? "—"
-  const isAvailable = item.isAvailable ?? true
+export default function DishCard({ item, index = 0, cardWidth = 160, href, showRank, onPress }) {
+  const title = item.name ?? item.dishName;
+  const imgSrc = item.imageUrl ?? item.image;
+  const description = item.description ?? "";
+  const price = item.price ?? "—";
+  const isAvailable = item.isAvailable ?? true;
 
   const CardInner = (
     <TouchableOpacity
-  activeOpacity={0.9}
-  style={{
-    width: cardWidth,
-    height: 210,
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    borderWidth: 1,            
-    borderColor: "#F5CB58",  
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-    marginHorizontal: 6,       
-    marginVertical: 8,         
-  }}
-  onPress={onPress}
->
-
+      activeOpacity={0.8}
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-3"
+      style={{ width: cardWidth }}
+      onPress={onPress}
+    >
       {/* IMAGE */}
-      <Image source={{ uri: imgSrc }} style={{ width: "100%", height: 115 }} resizeMode="cover" />
+      <View className="relative">
+        <Image
+          source={{ uri: imgSrc }}
+          className="w-full h-36 bg-gray-200"
+          resizeMode="cover"
+        />
+        {!isAvailable && (
+          <View className="absolute inset-0 bg-black/40 items-center justify-center">
+            <View className="bg-red-500 px-2 py-1 rounded-md transform -rotate-12">
+              <Text className="text-white text-[10px] font-bold uppercase">Sold Out</Text>
+            </View>
+          </View>
+        )}
+      </View>
 
       {/* Rank Badge */}
       {showRank && (
-        <View style={{ position: "absolute", top: -5, left: -5, width: 30, height: 30, alignItems: "center", justifyContent: "center" }}>
-          <MaskedView maskElement={<Text style={{ fontWeight: "bold", fontSize: 14, color: "white" }}>{index + 1}</Text>}>
-            <Image source={rankingGradient} style={{ width: 30, height: 30 }} />
-          </MaskedView>
+        <View className="absolute top-2 left-2 bg-yellow-400 w-6 h-6 rounded-full items-center justify-center shadow-sm z-10">
+          <Text className="text-xs font-bold text-yellow-900">{index + 1}</Text>
         </View>
       )}
 
       {/* CONTENT */}
-      <View style={{ padding: 8, flex: 1, justifyContent: "space-between" }}>
-        <View>
-          <Text style={{ fontSize: 13, fontWeight: "700", color: "#1f2937" }} numberOfLines={1}>
+      <View className="p-3">
+        <View className="h-10 justify-center">
+          <Text className="text-sm font-bold text-gray-800 leading-4" numberOfLines={2}>
             {title}
           </Text>
-          {!!description && (
-            <Text style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }} numberOfLines={2}>
-              {description}
-            </Text>
-          )}
         </View>
 
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
-          <Text style={{ fontSize: 13, fontWeight: "bold", color: "#059669" }}>₹{price}</Text>
-          {!isAvailable && <Text style={{ fontSize: 10, fontWeight: "600", color: "#dc2626" }}>Unavailable</Text>}
+        {!!description && (
+          <Text className="text-[10px] text-gray-500 mt-1 mb-2 leading-3" numberOfLines={1}>
+            {description}
+          </Text>
+        )}
+
+        <View className="flex-row items-center justify-between mt-1">
+          <Text className="text-sm font-extrabold text-orange-600">₹{price}</Text>
+          {/* <TouchableOpacity className="bg-orange-50 p-1.5 rounded-full">
+            <Text className="text-orange-500 text-[10px] font-bold">+</Text>
+          </TouchableOpacity> */}
         </View>
       </View>
     </TouchableOpacity>
-  )
+  );
 
-  return href ? <Link href={href} asChild>{CardInner}</Link> : CardInner
+  return href ? <Link href={href} asChild>{CardInner}</Link> : CardInner;
 }
 
 /* ---------- Example usage ---------- */

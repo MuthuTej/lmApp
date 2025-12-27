@@ -170,38 +170,70 @@ const Reorder = () => {
     return (
       <View
         key={order.orderId}
-        className="flex-row bg-gray-50 rounded-2xl p-4 mb-4 items-center shadow-lg border border-gray-200"
+        className="bg-white rounded-2xl p-4 mb-5 shadow-sm border border-gray-100"
       >
-        {/* Image */}
-        <Image
-          source={{ uri: order.items[0]?.imageUrl }}
-          className="w-20 h-20 rounded-xl"
-          resizeMode="cover"
-        />
+        {/* Header: Date & Total */}
+        <View className="flex-row justify-between items-center mb-3">
+          <Text className="text-xs text-gray-500 font-medium">
+            {new Date(Number(order.createdAt)).toLocaleString(undefined, {
+              weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            })}
+          </Text>
+          <View className="bg-green-50 px-2 py-1 rounded-md">
+            <Text className="text-xs text-green-700 font-bold">
+              ₹{order.total}
+            </Text>
+          </View>
+        </View>
 
-        {/* Info */}
-        <View className="flex-1 ml-4">
-          <Text className="text-base font-semibold text-gray-800">{order.items[0]?.dishName}</Text>
-          <Text className="text-xs text-gray-500">{new Date(Number(order.createdAt)).toLocaleString()}</Text>
-          <Text className="text-sm text-red-500 font-semibold">Paid - ₹{order.total}</Text>
+        {/* Divider */}
+        <View className="h-[1px] bg-gray-50 mb-3" />
 
-          {/* Progress bar for tracking orders */}
-          {!isPast && (
-            <View className="w-full h-2 bg-gray-200 rounded-full mt-2">
-              <View
-                className="h-2 bg-orange-500 rounded-full"
-                style={{ width: `${progress}%` }}
+        {/* Scrollable Items List */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2">
+          {order.items.map((item, index) => (
+            <View key={index} className="mr-3 items-center w-24 bg-gray-50 p-2 rounded-xl">
+              <Image
+                source={{ uri: item.imageUrl }}
+                className="w-20 h-20 rounded-lg mb-2 bg-gray-200"
+                resizeMode="cover"
               />
+              <Text numberOfLines={1} className="text-xs text-gray-800 text-center font-semibold w-full">
+                {item.dishName}
+              </Text>
+              <Text className="text-[10px] text-gray-500 mt-1">
+                Qty: {item.quantity}
+              </Text>
             </View>
-          )}
+          ))}
+        </ScrollView>
+
+        {/* Footer: Status & Actions */}
+        <View className="flex-row justify-between items-center mt-2 pt-2 border-t border-gray-50">
+          <View className="flex-row items-center flex-1">
+            <View className={`w-2 h-2 rounded-full mr-2 ${!isPast ? 'bg-orange-500' : 'bg-green-500'}`} />
+            <Text className="text-xs font-semibold text-gray-700 capitalize">
+              {order.status}
+            </Text>
+
+            {/* Progress bar for tracking orders (Inline) */}
+            {!isPast && (
+              <View className="flex-1 ml-3 h-1.5 bg-gray-100 rounded-full overflow-hidden max-w-[100px]">
+                <View
+                  className="h-full bg-orange-500 rounded-full"
+                  style={{ width: `${progress}%` }}
+                />
+              </View>
+            )}
+          </View>
 
           {/* Reorder button only for past orders */}
           {isPast && (
             <TouchableOpacity
               onPress={handleReorder}
-              className="bg-orange-500 px-4 py-2 mt-2 rounded-full self-start"
+              className="bg-orange-500 px-5 py-2 rounded-full shadow-sm shadow-orange-200"
             >
-              <Text className="text-white font-semibold text-xs">Reorder</Text>
+              <Text className="text-white font-bold text-xs tracking-wide">Reorder</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -210,25 +242,43 @@ const Reorder = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {/* Tracking Orders */}
-        <View className="mb-4">
-          <Text className="text-xl font-bold text-gray-800">Tracking Orders</Text>
-        </View>
+    <SafeAreaView className="flex-1 bg-gray-50">
+      {/* Header */}
+      <View className="bg-orange-500 pt-12 pb-8 px-6 rounded-b-[32px] shadow-lg mb-4 z-10">
+        <Text className="text-3xl font-bold text-white tracking-tight">Order History</Text>
+        <Text className="text-orange-100 text-sm mt-1 font-medium opacity-90">
+          Track current and past orders
+        </Text>
+      </View>
 
-        {trackingOrders.length > 0
-          ? trackingOrders.map(order => renderOrderCard(order, false))
-          : <Text className="text-gray-500">No active tracking orders.</Text>}
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        {/* Tracking Orders */}
+        <View className="mb-4 mt-2">
+          <View className="flex-row items-center mb-3">
+            <View className="w-1 h-6 bg-orange-500 rounded-full mr-3" />
+            <Text className="text-xl font-bold text-gray-800">Tracking Orders</Text>
+          </View>
+
+          {trackingOrders.length > 0
+            ? trackingOrders.map(order => renderOrderCard(order, false))
+            : (
+              <View className="bg-white p-6 rounded-2xl items-center justify-center border border-dashed border-gray-300">
+                <Text className="text-gray-400 font-medium">No active orders</Text>
+              </View>
+            )}
+        </View>
 
         {/* Past Orders */}
-        <View className="mb-4 mt-6">
-          <Text className="text-xl font-bold text-gray-800">Past Orders</Text>
-        </View>
+        <View className="mb-4 mt-4">
+          <View className="flex-row items-center mb-3">
+            <View className="w-1 h-6 bg-gray-300 rounded-full mr-3" />
+            <Text className="text-xl font-bold text-gray-800">Past Orders</Text>
+          </View>
 
-        {pastOrders.length > 0
-          ? pastOrders.map(order => renderOrderCard(order, true))
-          : <Text className="text-gray-500">No past orders.</Text>}
+          {pastOrders.length > 0
+            ? pastOrders.map(order => renderOrderCard(order, true))
+            : <Text className="text-gray-500 text-center mt-4">No past orders found.</Text>}
+        </View>
       </ScrollView>
     </SafeAreaView>
   )
