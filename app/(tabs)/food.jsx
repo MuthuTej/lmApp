@@ -7,8 +7,8 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { gql, useQuery, useMutation } from "@apollo/client";
 
 // --- GraphQL Queries/Mutations ---
