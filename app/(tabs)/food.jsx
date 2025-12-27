@@ -7,9 +7,8 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
-  SafeAreaView,
-  Modal,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { WebView } from "react-native-webview";
 
