@@ -280,19 +280,18 @@ const Reorder = () => {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         {/* Tracking Orders */}
         <View className="mb-4 mt-2">
-          <View className="flex-row items-center mb-3">
-            <View className="w-1 h-6 bg-orange-500 rounded-full mr-3" />
-            <Text className="text-xl font-bold text-gray-800">Tracking Orders</Text>
+          <View className="flex-row justify-between items-center mb-3">
+            <View className="flex-row items-center">
+              <View className="w-1 h-6 bg-orange-500 rounded-full mr-3" />
+              <Text className="text-xl font-bold text-gray-800">Tracking Orders</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => refetch()}
+              className="bg-gray-100 px-3 py-1 rounded-full border border-gray-300"
+            >
+              <Text className="text-xs font-medium text-gray-600">Refresh</Text>
+            </TouchableOpacity>
           </View>
-        <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-xl font-bold text-gray-800">Tracking Orders</Text>
-          <TouchableOpacity
-            onPress={() => refetch()}
-            className="bg-gray-100 px-3 py-1 rounded-full border border-gray-300"
-          >
-            <Text className="text-xs font-medium text-gray-600">Refresh</Text>
-          </TouchableOpacity>
-        </View>
 
           {trackingOrders.length > 0
             ? trackingOrders.map(order => renderOrderCard(order, false))
