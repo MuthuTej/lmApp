@@ -86,7 +86,7 @@ const Reorder = () => {
   const { data, loading, error, refetch } = useQuery(GET_ORDERS, {
     variables: { userId },
     skip: !userId,
-    // pollInterval: 5000, // ✅ Refetch every 5 seconds to get status updates
+    pollInterval: 5000, // ✅ Refetch every 5 seconds to get status updates
   })
 
   // Handle loading & error states
