@@ -5,14 +5,16 @@ import { gql, useQuery, useMutation } from "@apollo/client"
 
 // Query to get user info
 const ME = gql`
-  query {
+  query GetMe {
     me {
       id
-      email
       name
+      email
+      mobileNumber
+      registerNumber
     }
   }
-`
+`;
 
 // Query to fetch orders dynamically by userId
 const GET_ORDERS = gql`

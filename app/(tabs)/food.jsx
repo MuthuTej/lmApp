@@ -92,11 +92,13 @@ const CREATE_CASHFREE_ORDER = gql`
 `;
 
 const ME = gql`
-  query {
+  query GetMe {
     me {
       id
-      email
       name
+      email
+      mobileNumber
+      registerNumber
     }
   }
 `;
