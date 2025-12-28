@@ -40,7 +40,12 @@ const Home = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
-  const restaurants = data?.getRestaurents || [];
+  const restaurants = (data?.getRestaurents || []).map((restaurant, index) => ({
+    ...restaurant,
+    imageScale: index === 0 ? 0.85 : index === 1 ? 1.55 : index === 2 ? 0.80 : index === 3 ? 0.95 : 0.63,
+    imagePosition: index === 0 ? -65 : index === 1 ? -25 : index === 2 ? -45 : index === 3 ? -40 : -65,
+    imageHorizontal: index === 0 ? 1 : index === 1 ? 0 : index === 2 ? 3 : index === 3 ? 9 : 4,
+  }));
   const trending = []; // Replace with your trending dishes data
 
   const foodCategories = [
@@ -186,44 +191,52 @@ const Home = () => {
             data={restaurants}
             renderItem={({ item }) => (
               <Link href={`/restaurants/${item.name}`} asChild>
-                <TouchableOpacity className="bg-white rounded-3xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
-                  <View className="relative">
+                <TouchableOpacity className="rounded-3xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+                  <View className="relative bg-white">
                     <Image
                       source={{ uri: item.imageUrl }}
-                      className="h-48 w-full"
+                      className="h-64 w-full"
                       resizeMode="cover"
+                      style={{
+                        transform: [
+                          { scale: item.imageScale || 1.0 },
+                          { translateY: item.imagePosition || 0 },
+                          { translateX: item.imageHorizontal || 0 }
+                        ]
+                      }}
                     />
                     <View className="absolute top-3 right-3 bg-white px-2 py-1 rounded-lg flex-row items-center shadow-sm">
                       <Text className="text-xs font-bold text-gray-900">20-30 min</Text>
                     </View>
-                  </View>
 
-                  <View className="p-4">
-                    <View className="flex-row justify-between items-start mb-2">
-                      <Text className="text-xl font-bold text-gray-900 flex-1 mr-2">
-                        {item.displayName}
-                      </Text>
-                      <View className="bg-green-50 px-2 py-1 rounded-lg border border-green-100 flex-row items-center">
-                        <Text className="text-green-700 text-xs font-bold mr-1">4.3</Text>
-                        <Ionicons name="star" size={10} color="#15803d" />
-                      </View>
-                    </View>
-
-                    <View className="flex-row items-center mb-3">
-                      <Ionicons name="location-outline" size={14} color="#6B7280" />
-                      <Text className="text-gray-500 text-xs ml-1 mr-3">1.2 km</Text>
-                      <View className="w-1 h-1 rounded-full bg-gray-300 mr-3" />
-                      <Text className="text-orange-500 text-xs font-medium">Free Delivery</Text>
-                    </View>
-
-                    <View className="h-[1px] bg-gray-50 mb-3" />
-
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center bg-gray-50 px-2 py-1 rounded-md">
-                        <Ionicons name="pricetag-outline" size={12} color="#6B7280" />
-                        <Text className="text-gray-500 text-[10px] ml-1 font-medium">
-                          BURGER • PIZZA • FAST FOOD
+                    {/* Text Details positioned over image */}
+                    <View className="absolute bottom-0 left-0 right-0 p-4">
+                      <View className="flex-row justify-between items-start mb-2">
+                        <Text className="text-xl font-bold text-gray-900 flex-1 mr-2">
+                          {item.displayName}
                         </Text>
+                        <View className="bg-green-50 px-2 py-1 rounded-lg border border-green-100 flex-row items-center">
+                          <Text className="text-green-700 text-xs font-bold mr-1">4.3</Text>
+                          <Ionicons name="star" size={10} color="#15803d" />
+                        </View>
+                      </View>
+
+                      <View className="flex-row items-center mb-3">
+                        <Ionicons name="location-outline" size={14} color="#6B7280" />
+                        <Text className="text-gray-500 text-xs ml-1 mr-3">1.2 km</Text>
+                        <View className="w-1 h-1 rounded-full bg-gray-300 mr-3" />
+                        <Text className="text-orange-500 text-xs font-medium">Free Delivery</Text>
+                      </View>
+
+                      <View className="h-[1px] bg-gray-50 mb-3" />
+
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center bg-gray-50 px-2 py-1 rounded-md">
+                          <Ionicons name="pricetag-outline" size={12} color="#6B7280" />
+                          <Text className="text-gray-500 text-[10px] ml-1 font-medium">
+                            BURGER • PIZZA • FAST FOOD
+                          </Text>
+                        </View>
                       </View>
                     </View>
                   </View>
