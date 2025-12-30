@@ -130,25 +130,25 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
       <TouchableWithoutFeedback onPress={onClose}>
         <View className="flex-1 justify-end bg-black/40 backdrop-blur-sm">
           <TouchableWithoutFeedback>
-            <View className="bg-white rounded-t-3xl p-6 shadow-2xl max-h-[85%]">
+            <View className="bg-white rounded-t-[40px] p-6 shadow-2xl max-h-[85%]">
               {/* Grab bar */}
               <View className="items-center mb-6">
                 <View className="w-12 h-1.5 bg-gray-300 rounded-full" />
               </View>
 
               {/* Dish Image */}
-              <View className="shadow-sm rounded-2xl bg-white mb-5">
-                <Image source={{ uri: dish.imageUrl }} className="w-full h-56 rounded-2xl bg-gray-100" resizeMode="cover" />
+              <View className="shadow-xl shadow-orange-500/20 rounded-[24px] bg-white mb-6 border-[4px] border-orange-500 overflow-hidden">
+                <Image source={{ uri: dish.imageUrl }} className="w-full h-64 bg-gray-100" resizeMode="cover" />
               </View>
 
               {/* Dish Details */}
               <View className="mb-4">
                 <View className="flex-row justify-between items-start mb-2">
-                  <Text className="text-2xl font-bold text-gray-900 flex-1 mr-4">{dish.name}</Text>
-                  <Text className="text-2xl font-extrabold text-orange-600">₹{dish.price}</Text>
+                  <Text className="text-2xl font-outfit-bold text-gray-900 flex-1 mr-4">{dish.name}</Text>
+                  <Text className="text-2xl font-outfit-extrabold text-orange-600">₹{dish.price}</Text>
                 </View>
 
-                <Text className="text-gray-500 text-sm leading-5 mb-4 font-medium">{dish.description}</Text>
+                <Text className="text-gray-500 text-sm leading-5 mb-4 font-outfit-medium">{dish.description}</Text>
 
                 {/* Divider */}
                 <View className="h-[1px] bg-gray-100 my-2" />
@@ -157,19 +157,19 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
               {/* Footer Actions */}
               <View className="pt-2">
                 {/* Quantity Selector */}
-                <View className="flex-row items-center justify-center mb-6 bg-gray-50 self-center rounded-full p-1 border border-gray-200">
+                <View className="flex-row items-center justify-center mb-8 bg-orange-50 self-center rounded-full p-1.5 border border-orange-100 shadow-sm">
                   <TouchableOpacity
                     onPress={() => setQty(Math.max(1, qty - 1))}
-                    className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+                    className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm border border-orange-50"
                   >
                     <Ionicons name="remove" size={24} color="#EA580C" />
                   </TouchableOpacity>
 
-                  <Text className="text-xl font-bold text-gray-800 w-12 text-center">{qty}</Text>
+                  <Text className="text-2xl font-outfit-bold text-gray-800 w-16 text-center">{qty}</Text>
 
                   <TouchableOpacity
                     onPress={() => setQty(qty + 1)}
-                    className="w-10 h-10 bg-orange-500 rounded-full items-center justify-center shadow-sm"
+                    className="w-12 h-12 bg-orange-500 rounded-full items-center justify-center shadow-lg shadow-orange-200"
                   >
                     <Ionicons name="add" size={24} color="white" />
                   </TouchableOpacity>
@@ -181,15 +181,15 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
                     onPress={onClose}
                     className="flex-1 items-center justify-center py-4 rounded-2xl bg-gray-100 border border-gray-200"
                   >
-                    <Text className="text-gray-600 font-bold text-base">Cancel</Text>
+                    <Text className="text-gray-600 font-outfit-bold text-base">Cancel</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={handleAddToCart}
                     disabled={loading || meLoading}
-                    className="flex-[2] bg-orange-500 rounded-2xl py-4 items-center justify-center shadow-lg shadow-orange-200"
+                    className="flex-[2] bg-orange-500 rounded-2xl py-4 items-center justify-center shadow-lg shadow-orange-200 border-2 border-orange-400"
                   >
-                    <Text className="text-white font-bold text-lg tracking-wide">
+                    <Text className="text-white font-outfit-bold text-lg tracking-wide">
                       {loading ? 'Adding...' : `Add to Cart - ₹${dish.price * qty}`}
                     </Text>
                   </TouchableOpacity>

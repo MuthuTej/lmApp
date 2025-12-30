@@ -75,7 +75,7 @@ export default function RestaurantScreen() {
   );
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50" edges={['left', 'right', 'bottom']}>
       <Animated.FlatList
         style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
         ListHeaderComponent={
@@ -115,7 +115,7 @@ export default function RestaurantScreen() {
         restaurant={restaurant}
         onClose={() => setSelectedDish(null)}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
