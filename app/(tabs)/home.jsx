@@ -148,7 +148,7 @@ const Home = () => {
         <View className="mb-8">
           <View className="px-6 mb-4 flex-row justify-between items-end">
             <Text className="text-2xl font-outfit-bold text-gray-800">What are you craving?</Text>
-            <Text className="text-orange-500 text-xs font-outfit-bold">See All</Text>
+            <Text className="text-orange-500 text-base font-outfit-bold">See All</Text>
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
@@ -179,7 +179,7 @@ const Home = () => {
             <Text className="text-2xl font-outfit-bold text-gray-800">Popular Restaurants</Text>
             <Link href="/(tabs)/food" asChild>
               <TouchableOpacity>
-                <Text className="text-orange-500 text-xs font-outfit-bold">View All</Text>
+                <Text className="text-orange-500 text-base font-outfit-bold">View All</Text>
               </TouchableOpacity>
             </Link>
           </View>
