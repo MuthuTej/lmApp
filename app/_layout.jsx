@@ -113,9 +113,6 @@ export default function Layout() {
     Outfit_900Black,
   });
 
-  if (!fontsLoaded) {
-    return null;
-  }
   const notificationListener = useRef();
   const responseListener = useRef();
 
@@ -144,6 +141,10 @@ export default function Layout() {
       );
     };
   }, []);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <ApolloProvider client={client}>
