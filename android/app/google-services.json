@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "504567416385",
+    "project_id": "grabit-cff7e",
+    "storage_bucket": "grabit-cff7e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:504567416385:android:cf945f302eba376afda8c0",
+        "android_client_info": {
+          "package_name": "com.muthuraj14.lmApp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "504567416385-oc7nht4559j5gb91uf8oolkun4t91iu6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBj3FGPi2-sJtiYM629Cs1pNJjgLp-O1kM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "504567416385-oc7nht4559j5gb91uf8oolkun4t91iu6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
