@@ -6,6 +6,15 @@ import { ApolloProvider } from '@apollo/client';
 import "./globals.css"
 import { LogBox } from 'react-native';
 
+import {
+  useFonts,
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_700Bold,
+  Outfit_800ExtraBold,
+  Outfit_900Black
+} from '@expo-google-fonts/outfit';
+
 LogBox.ignoreLogs([
   'SafeAreaView has been deprecated',
   'Error: Unable to activate keep awake',
@@ -13,6 +22,18 @@ LogBox.ignoreLogs([
 ]);
 
 export default function Layout() {
+  const [fontsLoaded] = useFonts({
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_700Bold,
+    Outfit_800ExtraBold,
+    Outfit_900Black,
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <ApolloProvider client={client}>
       <Stack screenOptions={{ headerShown: false }}>
