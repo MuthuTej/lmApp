@@ -14,6 +14,15 @@ import Constants from 'expo-constants';
 
 /* -------------------- IGNORE WARNINGS -------------------- */
 
+import {
+  useFonts,
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_700Bold,
+  Outfit_800ExtraBold,
+  Outfit_900Black
+} from '@expo-google-fonts/outfit';
+
 LogBox.ignoreLogs([
   'SafeAreaView has been deprecated',
   'Error: Unable to activate keep awake',
@@ -96,6 +105,17 @@ async function registerForPushNotificationsAsync() {
 /* -------------------- ROOT LAYOUT -------------------- */
 
 export default function Layout() {
+  const [fontsLoaded] = useFonts({
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_700Bold,
+    Outfit_800ExtraBold,
+    Outfit_900Black,
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
   const notificationListener = useRef();
   const responseListener = useRef();
 

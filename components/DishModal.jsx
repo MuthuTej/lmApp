@@ -14,11 +14,13 @@ import { gql, useMutation, useQuery } from '@apollo/client';
 
 // ... Queries (keeping them same)
 const ME = gql`
-  query {
+  query GetMe {
     me {
       id
-      email
       name
+      email
+      mobileNumber
+      registerNumber
     }
   }
 `;

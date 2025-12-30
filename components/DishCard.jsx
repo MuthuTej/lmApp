@@ -11,7 +11,7 @@ export default function DishCard({ item, index = 0, cardWidth = 160, href, showR
   const CardInner = (
     <TouchableOpacity
       activeOpacity={0.8}
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-3"
+      className="bg-white rounded-2xl shadow-sm border-2 border-yellow-400 overflow-hidden mb-3"
       style={{ width: cardWidth }}
       onPress={onPress}
     >
@@ -25,7 +25,7 @@ export default function DishCard({ item, index = 0, cardWidth = 160, href, showR
         {!isAvailable && (
           <View className="absolute inset-0 bg-black/40 items-center justify-center">
             <View className="bg-red-500 px-2 py-1 rounded-md transform -rotate-12">
-              <Text className="text-white text-[10px] font-bold uppercase">Sold Out</Text>
+              <Text className="text-white text-[10px] font-outfit-bold uppercase">Sold Out</Text>
             </View>
           </View>
         )}
@@ -34,14 +34,14 @@ export default function DishCard({ item, index = 0, cardWidth = 160, href, showR
       {/* Rank Badge */}
       {showRank && (
         <View className="absolute top-2 left-2 bg-yellow-400 w-6 h-6 rounded-full items-center justify-center shadow-sm z-10">
-          <Text className="text-xs font-bold text-yellow-900">{index + 1}</Text>
+          <Text className="text-xs font-outfit-bold text-yellow-900">{index + 1}</Text>
         </View>
       )}
 
       {/* CONTENT */}
       <View className="p-3">
         <View className="h-10 justify-center">
-          <Text className="text-sm font-bold text-gray-800 leading-4" numberOfLines={2}>
+          <Text className="text-sm font-outfit-bold text-gray-800 leading-4" numberOfLines={2}>
             {title}
           </Text>
         </View>
@@ -53,7 +53,7 @@ export default function DishCard({ item, index = 0, cardWidth = 160, href, showR
         )}
 
         <View className="flex-row items-center justify-between mt-1">
-          <Text className="text-sm font-extrabold text-orange-600">₹{price}</Text>
+          <Text className="text-sm font-outfit-extrabold text-orange-600">₹{price}</Text>
           {/* <TouchableOpacity className="bg-orange-50 p-1.5 rounded-full">
             <Text className="text-orange-500 text-[10px] font-bold">+</Text>
           </TouchableOpacity> */}
