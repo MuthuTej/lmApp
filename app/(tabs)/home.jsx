@@ -155,7 +155,7 @@ const Home = () => {
             {foodCategories.map((category) => (
               <TouchableOpacity
                 key={category.id}
-                className="items-center mr-6"
+                className="items-center mr-3"
                 activeOpacity={0.7}
               >
                 <View className="mb-2 w-[88px] h-[88px] justify-center items-center">

@@ -9,6 +9,7 @@ import {
   Modal,
   ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { WebView } from "react-native-webview";
@@ -237,19 +238,21 @@ export default function CartScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="bg-orange-500 pt-12 pb-8 px-6 rounded-b-[32px] shadow-lg mb-6">
-        <View className="flex-row justify-between items-center">
-          <Text className="text-3xl font-bold text-white tracking-tight">My Cart</Text>
+      <View className="bg-orange-500 pt-14 pb-8 px-6 rounded-b-[40px] shadow-xl mb-6 z-10">
+        <View className="flex-row justify-between items-center mb-2">
+          <Text className="text-4xl font-outfit-extrabold text-white tracking-tight">My Cart</Text>
           <TouchableOpacity
             onPress={handleClearAll}
-            className="bg-white/20 px-4 py-2 rounded-full"
+            activeOpacity={0.7}
+            className="flex-row bg-white/20 px-3 py-2 rounded-full items-center border border-white/30"
           >
-            <Text className="text-white font-bold text-xs">Clear Cart</Text>
+            <Ionicons name="trash-outline" size={16} color="white" />
+            <Text className="text-white font-outfit-bold text-xs uppercase tracking-wide ml-2">Clear</Text>
           </TouchableOpacity>
         </View>
-        <Text className="text-orange-100 text-sm mt-1 font-medium opacity-90">
+        <Text className="text-orange-50 text-sm font-outfit-medium tracking-wide opacity-90 pl-1">
           {data?.getCart?.items?.length || 0} items waiting for you
         </Text>
       </View>
@@ -261,7 +264,7 @@ export default function CartScreen() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <View className="flex-row bg-white rounded-2xl p-4 mb-4 items-center shadow-sm border border-gray-100">
+          <View className="flex-row bg-white rounded-[24px] p-4 mb-5 items-center shadow-lg shadow-orange-500/10 border-2 border-orange-200">
             <Image
               source={{ uri: item.imageUrl }}
               className="w-20 h-20 rounded-xl bg-gray-200"
@@ -270,15 +273,15 @@ export default function CartScreen() {
 
             <View className="flex-1 ml-4 justify-between h-20 py-1">
               <View>
-                <Text className="text-base font-bold text-gray-800 leading-tight" numberOfLines={2}>
+                <Text className="text-base font-outfit-bold text-gray-800 leading-tight" numberOfLines={2}>
                   {item.dishName}
                 </Text>
-                <Text className="text-sm font-extrabold text-orange-600 mt-1">
+                <Text className="text-sm font-outfit-extrabold text-orange-600 mt-1">
                   ₹{item.price * item.quantity}
                 </Text>
               </View>
 
-              <Text className="text-[10px] text-gray-400 font-medium">
+              <Text className="text-[10px] text-gray-400 font-outfit-medium">
                 ₹{item.price} / item
               </Text>
             </View>
@@ -289,13 +292,13 @@ export default function CartScreen() {
                 disabled={loadingItemId === item.dishId}
                 className="bg-orange-500 w-7 h-7 rounded-full justify-center items-center shadow-sm"
               >
-                <Text className="text-lg font-bold text-white leading-5">+</Text>
+                <Text className="text-lg font-outfit-bold text-white leading-5">+</Text>
               </TouchableOpacity>
 
               {loadingItemId === item.dishId ? (
                 <ActivityIndicator size="small" color="#f97316" />
               ) : (
-                <Text className="text-base font-bold text-gray-800">
+                <Text className="text-base font-outfit-bold text-gray-800">
                   {item.quantity}
                 </Text>
               )}
@@ -303,9 +306,9 @@ export default function CartScreen() {
               <TouchableOpacity
                 onPress={() => handleQuantityChange(item, -1)}
                 disabled={loadingItemId === item.dishId}
-                className="bg-gray-100 w-7 h-7 rounded-full justify-center items-center border border-gray-200"
+                className="bg-gray-50 w-7 h-7 rounded-full justify-center items-center border border-gray-200"
               >
-                <Text className="text-lg font-bold text-gray-600 leading-5">-</Text>
+                <Text className="text-lg font-outfit-bold text-gray-600 leading-5">-</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -314,29 +317,33 @@ export default function CartScreen() {
 
       {/* Checkout Button */}
       {data?.getCart?.items?.length > 0 && (
-        <View className="absolute bottom-0 left-0 right-0 p-5 bg-white rounded-t-3xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-          <View className="flex-row justify-between items-center mb-4 px-1">
-            <Text className="text-gray-500 font-medium text-sm">Total Amount</Text>
-            <Text className="text-2xl font-extrabold text-gray-900">
-              ₹{data.getCart.items.reduce((acc, item) => acc + (item.price * item.quantity), 0)}
-            </Text>
+        <View className="absolute bottom-0 left-0 right-0 p-5 bg-white rounded-t-[32px] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] border-t border-gray-100">
+          <View className="flex-row items-center justify-between">
+            <View className="pl-2">
+              <Text className="text-gray-400 font-outfit-medium text-sm">Total Bill</Text>
+              <Text className="text-3xl font-outfit-extrabold text-gray-900">
+                ₹{data.getCart.items.reduce((acc, item) => acc + (item.price * item.quantity), 0)}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleCheckout}
+              disabled={checkoutLoading}
+              activeOpacity={0.8}
+              className="flex-1 ml-6 bg-orange-500 py-4 rounded-2xl shadow-xl shadow-orange-500/30 flex-row justify-center items-center"
+            >
+              {checkoutLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Text className="text-center text-white text-lg font-outfit-bold mr-2">
+                    Checkout
+                  </Text>
+                  <Ionicons name="arrow-forward" size={20} color="white" />
+                </>
+              )}
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={handleCheckout}
-            disabled={checkoutLoading}
-            className="bg-orange-500 py-4 rounded-2xl shadow-lg shadow-orange-200 flex-row justify-center items-center"
-          >
-            {checkoutLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <Text className="text-center text-white text-lg font-bold mr-2">
-                  Checkout Securely
-                </Text>
-                {/* Ionicons is imported but not defined in this scope yet, let's stick to text or verify import */}
-              </>
-            )}
-          </TouchableOpacity>
         </View>
       )}
 
@@ -373,6 +380,6 @@ export default function CartScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView >
+    </View >
   );
 }
