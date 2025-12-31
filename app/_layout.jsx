@@ -3,7 +3,9 @@
 import { Stack } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import client from '../apolloClient';
-import { ApolloProvider } from '@apollo/client';
+import { ApolloProvider, useMutation, gql } from '@apollo/client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSegments } from 'expo-router';
 import "./globals.css";
 import { LogBox, Platform } from 'react-native';
 
@@ -42,6 +44,14 @@ Notifications.setNotificationHandler({
     };
   },
 });
+
+/* -------------------- GRAPHQL MUTATIONS -------------------- */
+
+const SAVE_PUSH_TOKEN = gql`
+  mutation SavePushToken($userId: String!, $token: String!) {
+    savePushToken(userId: $userId, token: $token)
+  }
+`;
 
 /* -------------------- REGISTER PUSH TOKEN -------------------- */
 
@@ -104,22 +114,56 @@ async function registerForPushNotificationsAsync() {
 
 /* -------------------- ROOT LAYOUT -------------------- */
 
-export default function Layout() {
-  const [fontsLoaded] = useFonts({
-    Outfit_400Regular,
-    Outfit_500Medium,
-    Outfit_700Bold,
-    Outfit_800ExtraBold,
-    Outfit_900Black,
-  });
-
+function RootLayoutNav() {
   const notificationListener = useRef();
   const responseListener = useRef();
+  const lastSyncedUserId = useRef(null);
+  const lastSyncedToken = useRef(null);
+
+  const [savePushToken] = useMutation(SAVE_PUSH_TOKEN);
+
+  const syncPushToken = async () => {
+    try {
+      const token = await registerForPushNotificationsAsync();
+      const userId = await AsyncStorage.getItem('userId');
+
+      if (token && userId) {
+        // Only sync if userId or token has changed
+        if (lastSyncedUserId.current === userId && lastSyncedToken.current === token) {
+          console.log('ℹ️ Push token already synced for this user and token');
+          return;
+        }
+
+        console.log(`🔄 Syncing push token for user: ${userId}`);
+        await savePushToken({
+          variables: {
+            userId: userId,
+            token: token,
+          },
+        });
+
+        // Update refs after successful sync
+        lastSyncedUserId.current = userId;
+        lastSyncedToken.current = token;
+
+        console.log('✅ Push token synced successfully');
+      } else {
+        console.log('⚠️ Skipping token sync: ', { hasToken: !!token, hasUserId: !!userId });
+      }
+    } catch (error) {
+      console.error('❌ Error syncing push token:', error);
+    }
+  };
+
+  const segments = useSegments();
+
+  useEffect(() => {
+    // Sync whenever segments change (e.g., navigating to /home after login)
+    syncPushToken();
+  }, [segments]);
 
   useEffect(() => {
     console.log('📦 App mounted (_layout.jsx)');
-
-    registerForPushNotificationsAsync();
 
     notificationListener.current =
       Notifications.addNotificationReceivedListener(notification => {
@@ -133,14 +177,39 @@ export default function Layout() {
 
     return () => {
       console.log('🧹 Cleaning up notification listeners');
-      Notifications.removeNotificationSubscription(
-        notificationListener.current
-      );
-      Notifications.removeNotificationSubscription(
-        responseListener.current
-      );
+      if (notificationListener.current) {
+        notificationListener.current.remove();
+      }
+      if (responseListener.current) {
+        responseListener.current.remove();
+      }
     };
   }, []);
+
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+      <Toast />
+    </>
+  );
+}
+
+export default function Layout() {
+  useEffect(() => {
+    console.log('📦 Root Layout loaded');
+  }, []);
+
+  const [fontsLoaded] = useFonts({
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_700Bold,
+    Outfit_800ExtraBold,
+    Outfit_900Black,
+  });
 
   if (!fontsLoaded) {
     return null;
@@ -148,12 +217,7 @@ export default function Layout() {
 
   return (
     <ApolloProvider client={client}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
-      <Toast />
+      <RootLayoutNav />
     </ApolloProvider>
   );
 }
