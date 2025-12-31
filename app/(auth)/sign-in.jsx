@@ -133,7 +133,7 @@ export default function SignIn() {
                   <View className="w-5 h-5 border border-orange-300 rounded mr-2" />
                   <Text className="text-gray-500 text-sm">Remember me</Text>
                 </TouchableOpacity>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push("/forgot-password")}>
                   <Text className="text-gray-500 text-sm">Forgot Password</Text>
                 </TouchableOpacity>
               </View>
@@ -143,23 +143,7 @@ export default function SignIn() {
                   {error.message}
                 </Text>
               )}
-              {loginError && (
-                <TouchableOpacity
-                  onPress={() => router.push("/forgot-password")} // navigate to ForgotPassword screen
-                  style={{ marginBottom: 12 }}
-                >
-                  <Text
-                    style={{
-                      color: "#F97316",
-                      textAlign: "center",
-                      fontWeight: "600",
-                      textDecorationLine: "underline",
-                    }}
-                  >
-                    Forgot Password?
-                  </Text>
-                </TouchableOpacity>
-              )}
+              
               {/* Sign In Button */}
               <TouchableOpacity // Sign In Action
                 onPress={() => signIn({ variables: { email, password } })}
