@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import client from "../../apolloClient";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -98,6 +99,8 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("userId");
+    await client.clearStore();
     router.replace("/sign-in");
   };
 

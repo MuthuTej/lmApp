@@ -44,10 +44,6 @@ export default function DishCard({ item, index = 0, cardWidth = 160, href, showR
           <Text className="text-sm font-outfit-bold text-gray-800 leading-4" numberOfLines={2}>
             {title}
           </Text>
-
-
-
-          
         </View>
 
         {!!description && (
