@@ -131,6 +131,7 @@ export default function Layout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+         <Stack.Screen name="test-push" />
       </Stack>
       <Toast />
     </ApolloProvider>
