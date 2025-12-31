@@ -1,6 +1,6 @@
 import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native'
 import React from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
+
 import { gql, useQuery, useMutation } from "@apollo/client"
 
 // Query to get user info
@@ -198,24 +198,24 @@ const Reorder = () => {
     return (
       <View
         key={order.orderId}
-        className="bg-white rounded-2xl p-4 mb-5 shadow-sm border border-gray-100"
+        className="bg-white rounded-[24px] p-5 mb-6 shadow-lg shadow-orange-500/25 border-2 border-orange-200"
       >
         {/* Header: Date & Total */}
         <View className="flex-row justify-between items-center mb-3">
-          <Text className="text-xs text-gray-500 font-medium">
+          <Text className="text-xs text-gray-400 font-outfit-bold uppercase tracking-wider">
             {new Date(Number(order.createdAt)).toLocaleString(undefined, {
               weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
             })}
           </Text>
-          <View className="bg-green-50 px-2 py-1 rounded-md">
-            <Text className="text-xs text-green-700 font-bold">
+          <View className="bg-green-50 px-3 py-1 rounded-full border border-green-100">
+            <Text className="text-sm text-green-700 font-outfit-bold">
               ₹{order.total}
             </Text>
           </View>
         </View>
 
         {/* Divider */}
-        <View className="h-[1px] bg-gray-50 mb-3" />
+        <View className="h-0.5 bg-gray-100 mb-3" />
 
         {/* Scrollable Items List */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2">
@@ -226,7 +226,7 @@ const Reorder = () => {
                 className="w-20 h-20 rounded-lg mb-2 bg-gray-200"
                 resizeMode="cover"
               />
-              <Text numberOfLines={1} className="text-xs text-gray-800 text-center font-semibold w-full">
+              <Text numberOfLines={1} className="text-xs text-gray-800 text-center font-outfit-bold w-full">
                 {item.dishName}
               </Text>
               <Text className="text-[10px] text-gray-500 mt-1">
@@ -240,7 +240,7 @@ const Reorder = () => {
         <View className="flex-row justify-between items-center mt-2 pt-2 border-t border-gray-50">
           <View className="flex-row items-center flex-1">
             <View className={`w-2 h-2 rounded-full mr-2 ${!isPast ? 'bg-orange-500' : 'bg-green-500'}`} />
-            <Text className="text-xs font-semibold text-gray-700 capitalize">
+            <Text className="text-xs font-outfit-bold text-gray-700 capitalize tracking-wide">
               {order.status}
             </Text>
 
@@ -259,9 +259,9 @@ const Reorder = () => {
           {isPast && (
             <TouchableOpacity
               onPress={handleReorder}
-              className="bg-orange-500 px-5 py-2 rounded-full shadow-sm shadow-orange-200"
+              className="bg-orange-500 px-5 py-2 rounded-full shadow-lg shadow-orange-500/30"
             >
-              <Text className="text-white font-bold text-xs tracking-wide">Reorder</Text>
+              <Text className="text-white font-outfit-bold text-xs tracking-wide">Reorder</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -270,11 +270,11 @@ const Reorder = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="bg-orange-500 pt-12 pb-8 px-6 rounded-b-[32px] shadow-lg mb-4 z-10">
-        <Text className="text-3xl font-bold text-white tracking-tight">Order History</Text>
-        <Text className="text-orange-100 text-sm mt-1 font-medium opacity-90">
+      <View className="bg-orange-500 pt-14 pb-8 px-6 rounded-b-[40px] shadow-xl mb-6 z-10">
+        <Text className="text-4xl font-outfit-extrabold text-white tracking-tight">Order History</Text>
+        <Text className="text-orange-50 text-sm mt-1 font-outfit-medium tracking-wide opacity-90">
           Track current and past orders
         </Text>
       </View>
@@ -284,8 +284,8 @@ const Reorder = () => {
         <View className="mb-4 mt-2">
           <View className="flex-row justify-between items-center mb-3">
             <View className="flex-row items-center">
-              <View className="w-1 h-6 bg-orange-500 rounded-full mr-3" />
-              <Text className="text-xl font-bold text-gray-800">Tracking Orders</Text>
+              <View className="w-1.5 h-6 bg-orange-500 rounded-full mr-3" />
+              <Text className="text-2xl font-outfit-bold text-gray-800">Tracking Orders</Text>
             </View>
             <TouchableOpacity
               onPress={() => refetch()}
@@ -309,9 +309,9 @@ const Reorder = () => {
 
         {/* Past Orders */}
         <View className="mb-4 mt-4">
-          <View className="flex-row items-center mb-3">
-            <View className="w-1 h-6 bg-gray-300 rounded-full mr-3" />
-            <Text className="text-xl font-bold text-gray-800">Past Orders</Text>
+          <View className="flex-row items-center mb-4">
+            <View className="w-1.5 h-6 bg-gray-300 rounded-full mr-3" />
+            <Text className="text-2xl font-outfit-bold text-gray-800">Past Orders</Text>
           </View>
 
           {pastOrders.length > 0
@@ -319,7 +319,7 @@ const Reorder = () => {
             : <Text className="text-gray-500 text-center mt-4">No past orders found.</Text>}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   )
 }
 
