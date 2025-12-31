@@ -289,10 +289,13 @@ const Reorder = () => {
             </View>
             <TouchableOpacity
               onPress={() => refetch()}
-              className="bg-gray-100 px-3 py-1 rounded-full border border-gray-300"
+              className="bg-orange-100 px-4 py-1.5 rounded-full border border-orange-300 active:bg-orange-200"
             >
-              <Text className="text-xs font-medium text-gray-600">Refresh</Text>
+              <Text className="text-xs font-semibold text-orange-700">
+                Refresh
+              </Text>
             </TouchableOpacity>
+
           </View>
 
           {trackingOrders.length > 0
