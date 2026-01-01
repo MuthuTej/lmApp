@@ -23,6 +23,7 @@ const GET_ME = gql`
       email
       mobileNumber
       registerNumber
+      expoPushToken
     }
   }
 `;
