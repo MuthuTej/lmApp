@@ -11,8 +11,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { gql, useQuery, useMutation } from "@apollo/client";
+import { gql, useQuery, useMutation, useApolloClient } from "@apollo/client";
 import { WebView } from "react-native-webview";
+import { useRouter } from "expo-router";
+import { TextInput } from "react-native";
+import { useEffect, useRef } from "react";
 
 // ------------------ GraphQL ------------------
 
@@ -92,6 +95,34 @@ const CREATE_CASHFREE_ORDER = gql`
   }
 `;
 
+const GET_RESTAURANTS = gql`
+  query {
+    getRestaurents {
+      displayName
+      imageUrl
+      name
+    }
+  }
+`;
+
+const GET_MENU_BY_RESTAURANT_NAME = gql`
+  query GetMenuByRestaurantName($name: String!) {
+    getMenuByRestaurantName(name: $name) {
+      name
+      menu {
+        name
+        category
+        description
+        imageUrl
+        isAvailable
+        price
+      }
+      isOpen
+      logo
+    }
+  }
+`;
+
 const ME = gql`
   query GetMe {
     me {
@@ -107,6 +138,8 @@ const ME = gql`
 // ------------------ Component ------------------
 
 export default function CartScreen() {
+  const router = useRouter();
+  const client = useApolloClient();
   const { data: meData, loading: meLoading } = useQuery(ME);
   const userId = meData?.me?.id || null;
   const userName = meData?.me?.name || null;
@@ -114,6 +147,15 @@ export default function CartScreen() {
   const [loadingItemId, setLoadingItemId] = useState(null);
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [showWebView, setShowWebView] = useState(false);
+
+  // Search States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [allRestaurantMenus, setAllRestaurantMenus] = useState([]);
+  const [menusLoaded, setMenusLoaded] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const { data: restaurantsData } = useQuery(GET_RESTAURANTS);
 
   const { data, loading, refetch } = useQuery(GET_CART, {
     variables: { userId },
@@ -153,7 +195,88 @@ export default function CartScreen() {
 
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+  // ------------------ Background Fetch ------------------
+  useEffect(() => {
+    if (restaurantsData?.getRestaurents && !menusLoaded) {
+      const fetchAllMenus = async () => {
+        try {
+          const restaurantList = restaurantsData.getRestaurents;
+          const menuResults = await Promise.all(
+            restaurantList.map(async (res) => {
+              try {
+                const { data: menuData } = await client.query({
+                  query: GET_MENU_BY_RESTAURANT_NAME,
+                  variables: { name: res.name },
+                });
+                return menuData?.getMenuByRestaurantName;
+              } catch (err) {
+                console.error(`Error fetching menu for ${res.name}:`, err);
+                return null;
+              }
+            })
+          );
+          setAllRestaurantMenus(menuResults.filter(Boolean));
+          setMenusLoaded(true);
+        } catch (err) {
+          console.error("Error in background menu fetching:", err);
+        }
+      };
+      fetchAllMenus();
+    }
+  }, [restaurantsData, menusLoaded]);
+
   // ------------------ Handlers ------------------
+
+  const handleSearch = (query = searchQuery) => {
+    const finalQuery = typeof query === 'string' ? query : searchQuery;
+    if (finalQuery.trim()) {
+      setShowSuggestions(false);
+      router.push({
+        pathname: "/search",
+        params: { q: finalQuery.trim() }
+      });
+    }
+  };
+
+  const updateSuggestions = (text) => {
+    setSearchQuery(text);
+    if (text.length > 1) {
+      const filtered = [];
+      const seenItems = new Set();
+
+      allRestaurantMenus.forEach(res => {
+        res.menu.forEach(item => {
+          const itemName = item.name.toLowerCase();
+          const category = item.category.toLowerCase();
+          const searchText = text.toLowerCase();
+
+          if ((itemName.includes(searchText) || category.includes(searchText)) && !seenItems.has(item.name)) {
+            filtered.push({
+              name: item.name,
+              type: 'dish',
+              category: item.category
+            });
+            seenItems.add(item.name);
+          }
+        });
+
+        if (res.name.toLowerCase().includes(text.toLowerCase()) && !seenItems.has(res.name)) {
+          filtered.push({
+            name: (restaurantsData?.getRestaurents?.find(r => r.name === res.name)?.displayName || res.name),
+            originalName: res.name,
+            type: 'restaurant'
+          });
+          seenItems.add(res.name);
+        }
+      });
+
+      setSuggestions(filtered.slice(0, 8));
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
 
   const handleQuantityChange = (item, change) => {
     setLoadingItemId(item.dishId);
@@ -252,9 +375,54 @@ export default function CartScreen() {
             <Text className="text-white font-outfit-bold text-xs uppercase tracking-wide ml-2">Clear</Text>
           </TouchableOpacity>
         </View>
-        <Text className="text-orange-50 text-sm font-outfit-medium tracking-wide opacity-90 pl-1">
+        <Text className="text-orange-50 text-sm font-outfit-medium tracking-wide opacity-90 pl-1 mb-4">
           {data?.getCart?.items?.length || 0} items waiting for you
         </Text>
+
+        {/* Search Bar */}
+        <View className="relative">
+          <View className="bg-white rounded-2xl px-4 py-2.5 flex-row items-center border-2 border-orange-100 shadow-sm">
+            <Ionicons name="search" size={20} color="#F97316" />
+            <TextInput
+              placeholder="Search dishes, restaurants..."
+              className="flex-1 ml-3 text-gray-800 font-outfit-bold text-sm"
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={updateSuggestions}
+              onSubmitEditing={() => handleSearch()}
+              returnKeyType="search"
+              onFocus={() => searchQuery.length > 1 && setShowSuggestions(true)}
+            />
+          </View>
+
+          {/* Suggestions Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <View className="absolute top-[55px] left-0 right-0 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+              {suggestions.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    handleSearch(item.originalName || item.name);
+                  }}
+                  className={`flex-row items-center p-3 border-b border-gray-50 ${index === suggestions.length - 1 ? 'border-b-0' : ''}`}
+                >
+                  <Ionicons
+                    name={item.type === 'dish' ? "fast-food-outline" : "restaurant-outline"}
+                    size={16}
+                    color="#F97316"
+                  />
+                  <View className="ml-3 flex-1">
+                    <Text className="text-gray-800 font-outfit-bold text-sm">{item.name}</Text>
+                    {item.type === 'dish' && (
+                      <Text className="text-gray-400 font-outfit-medium text-[10px]">{item.category}</Text>
+                    )}
+                  </View>
+                  <Ionicons name="arrow-forward" size={14} color="#E5E7EB" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Cart Items */}

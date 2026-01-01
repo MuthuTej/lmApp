@@ -4,8 +4,8 @@ import { setContext } from '@apollo/client/link/context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const httpLink = createHttpLink({
-  // uri: 'https://lm-backend-zrtl.onrender.com/graphql',
-  uri: 'http://192.168.1.8:4000/graphql',
+  uri: 'https://lm-backend-zrtl.onrender.com/graphql',
+  // uri: 'http://192.168.1.8:4000/graphql',
 });
 
 const authLink = setContext(async (_, { headers }) => {
