@@ -57,6 +57,7 @@ const GET_ORDERS = gql`
 const ORDER_STATUS_SUBSCRIPTION = gql`
   subscription OrderStatusUpdated($userId: String!) {
     orderStatusUpdated(userId: $userId) {
+      internalOrderId
       orderId
       items {
         dishName
@@ -135,42 +136,32 @@ const Reorder = () => {
         const currentTracking = prev.lastOrder.trackingOrders || [];
         const currentPast = prev.lastOrder.pastOrders || [];
 
-        // Check if order exists in lists
-        const isTracking = currentTracking.some(o => o.orderId === newOrder.orderId);
-        const isPast = currentPast.some(o => o.orderId === newOrder.orderId);
-
         // Logic: Is this order completed/delivered?
         const isCompleted = ["delivered", "completed", "cancelled"].includes(newOrder.status.toLowerCase());
+
+        // Helper to remove order from a list by orderId
+        const removeOrder = (list) => list.filter((o) => o.orderId !== newOrder.orderId);
+
+        // Helper to add or update order in a list
+        const addOrUpdateOrder = (list) => {
+          const exists = list.some((o) => o.orderId === newOrder.orderId);
+          if (exists) {
+            return list.map((o) => (o.orderId === newOrder.orderId ? { ...o, ...newOrder } : o));
+          }
+          return [newOrder, ...list];
+        };
 
         let newTracking = [...currentTracking];
         let newPast = [...currentPast];
 
         if (isCompleted) {
-          // If it was tracking, remove it
-          if (isTracking) {
-            newTracking = newTracking.filter(o => o.orderId !== newOrder.orderId);
-          }
-          // Add to past if not already there (or update it)
-          if (isPast) {
-            newPast = newPast.map(o => o.orderId === newOrder.orderId ? { ...o, ...newOrder } : o);
-          } else {
-            // For a complete implementation, we'd need the full order details here to add it freshly.
-            // But usually it transitions from tracking, so we have the data.
-            // If we rely on the subscription only sending updates, we might need a refetch if it's missing.
-            // Assuming newOrder carries enough info or we accept the risk/complexity.
-            // For now, let's map it if exists, else add it.
-            // Note: The subscription payload defined earlier might need internalOrderId to match the new query shape perfecty
-            // but visually it will update.
-            newPast = [newOrder, ...newPast];
-          }
+          // Move to Past Checks (remove from tracking, add/update in past)
+          newTracking = removeOrder(newTracking);
+          newPast = addOrUpdateOrder(newPast);
         } else {
-          // It is still active/tracking
-          if (isTracking) {
-            newTracking = newTracking.map(o => o.orderId === newOrder.orderId ? { ...o, ...newOrder } : o);
-          } else {
-            newTracking = [newOrder, ...newTracking];
-            if (isPast) newPast = newPast.filter(o => o.orderId !== newOrder.orderId);
-          }
+          // Move to Tracking Checks (remove from past, add/update in tracking)
+          newPast = removeOrder(newPast);
+          newTracking = addOrUpdateOrder(newTracking);
         }
 
         return {
