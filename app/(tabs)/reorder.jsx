@@ -1,11 +1,10 @@
 import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native'
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { gql, useQuery, useMutation, useSubscription } from "@apollo/client"
+import { gql, useQuery, useMutation } from "@apollo/client" // Removed useSubscription, handled in useQuery
 
 // -------------------- QUERIES --------------------
 
-// Query to get user info
 const ME = gql`
   query GetMe {
     me {
@@ -54,27 +53,42 @@ const GET_ORDERS = gql`
 
 // -------------------- SUBSCRIPTION --------------------
 
+// 🔹 UPDATED: Now expects the FULL LISTS, not a single order
 const ORDER_STATUS_SUBSCRIPTION = gql`
   subscription OrderStatusUpdated($userId: String!) {
     orderStatusUpdated(userId: $userId) {
-      internalOrderId
-      orderId
-      items {
-        dishName
-        price
-        quantity
-        imageUrl
+      trackingOrders {
+        internalOrderId
+        orderId
+        items {
+          dishName
+          price
+          quantity
+          imageUrl
+        }
+        total
+        createdAt
+        status
       }
-      total
-      createdAt
-      status
+      pastOrders {
+        internalOrderId
+        orderId
+        items {
+          dishName
+          price
+          quantity
+          imageUrl
+        }
+        total
+        createdAt
+        status
+      }
     }
   }
 `
 
 // -------------------- MUTATION --------------------
 
-// Reorder mutation
 const REORDER_MUTATION = gql`
   mutation Reorder($userId: String!, $internalOrderId: String, $forceAdd: Boolean) {
     reorder(
@@ -103,14 +117,11 @@ const REORDER_MUTATION = gql`
 // ==================== COMPONENT ====================
 
 const Reorder = () => {
-  // Fetch user
-  const { data: meData, loading: meLoading, error: meError } = useQuery(ME)
+  const { data: meData, loading: meLoading } = useQuery(ME)
   const userId = meData?.me?.id
 
-  // Mutation
   const [reorder] = useMutation(REORDER_MUTATION)
 
-  // Fetch orders
   const {
     data,
     loading,
@@ -122,7 +133,7 @@ const Reorder = () => {
     skip: !userId,
   })
 
-  // 🔴 Smart Subscription Handling
+  // � UPDATED: Simplified Logic (Syncs entire list)
   React.useEffect(() => {
     if (!subscribeToMore || !userId) return;
 
@@ -132,45 +143,12 @@ const Reorder = () => {
       updateQuery: (prev, { subscriptionData }) => {
         if (!subscriptionData.data) return prev;
 
-        const newOrder = subscriptionData.data.orderStatusUpdated;
-        const currentTracking = prev.lastOrder.trackingOrders || [];
-        const currentPast = prev.lastOrder.pastOrders || [];
+        console.log("🔔 Full order list update received");
 
-        // Logic: Is this order completed/delivered?
-        const isCompleted = ["delivered", "completed", "cancelled"].includes(newOrder.status.toLowerCase());
-
-        // Helper to remove order from a list by orderId
-        const removeOrder = (list) => list.filter((o) => o.orderId !== newOrder.orderId);
-
-        // Helper to add or update order in a list
-        const addOrUpdateOrder = (list) => {
-          const exists = list.some((o) => o.orderId === newOrder.orderId);
-          if (exists) {
-            return list.map((o) => (o.orderId === newOrder.orderId ? { ...o, ...newOrder } : o));
-          }
-          return [newOrder, ...list];
-        };
-
-        let newTracking = [...currentTracking];
-        let newPast = [...currentPast];
-
-        if (isCompleted) {
-          // Move to Past Checks (remove from tracking, add/update in past)
-          newTracking = removeOrder(newTracking);
-          newPast = addOrUpdateOrder(newPast);
-        } else {
-          // Move to Tracking Checks (remove from past, add/update in tracking)
-          newPast = removeOrder(newPast);
-          newTracking = addOrUpdateOrder(newTracking);
-        }
-
+        // 🟢 Direct replacement - No complex logic needed!
         return {
           ...prev,
-          lastOrder: {
-            ...prev.lastOrder,
-            trackingOrders: newTracking,
-            pastOrders: newPast,
-          },
+          lastOrder: subscriptionData.data.orderStatusUpdated,
         };
       },
     });
@@ -179,25 +157,16 @@ const Reorder = () => {
   }, [subscribeToMore, userId]);
 
 
-  // Handle loading & error states
-  if (meLoading || loading) {
-    return <Text className="p-4">Loading...</Text>
-  }
-  if (meError) {
-    return <Text className="p-4">Error: {meError.message}</Text>
-  }
-  if (error) {
-    return <Text className="p-4">Error: {error.message}</Text>
-  }
+  if (meLoading || loading) return <Text className="p-4">Loading...</Text>
+  if (error) return <Text className="p-4">Error: {error.message}</Text>
 
-  if (!data?.lastOrder) {
-    return <Text className="p-4">No orders found.</Text>
-  }
+  // Safe access
+  const trackingOrders = data?.lastOrder?.trackingOrders || []
+  const pastOrders = data?.lastOrder?.pastOrders || []
 
-  const { trackingOrders, pastOrders } = data.lastOrder
 
-  // Handle reorder
   const handleReorder = async (orderId) => {
+    // ... keep your existing reorder logic ...
     if (!orderId) {
       Alert.alert("Error", "Cannot identify this order. internalOrderId is missing.");
       return;
@@ -276,10 +245,10 @@ const Reorder = () => {
     }
   }
 
+
   // Order card
   const renderOrderCard = (order, isPast = false) => {
     const progress = getProgress(order.status)
-
     return (
       <View
         key={order.internalOrderId}
@@ -380,7 +349,6 @@ const Reorder = () => {
                 Refresh
               </Text>
             </TouchableOpacity>
-
           </View>
 
           {trackingOrders.length > 0
