@@ -50,12 +50,21 @@ const GET_ORDERS = gql`
 
 // -------------------- SUBSCRIPTION --------------------
 
+// -------------------- SUBSCRIPTION --------------------
+
 const ORDER_STATUS_SUBSCRIPTION = gql`
   subscription OrderStatusUpdated($userId: String!) {
     orderStatusUpdated(userId: $userId) {
       orderId
-      status
+      items {
+        dishName
+        price
+        quantity
+        imageUrl
+      }
       total
+      createdAt
+      status
     }
   }
 `
@@ -74,6 +83,7 @@ const REORDER_MUTATION = gql`
       }
       unavailableItems {
         dishName
+        name
       }
     }
   }
@@ -91,22 +101,72 @@ const Reorder = () => {
     data,
     loading,
     error,
-    refetch,
+    subscribeToMore,
   } = useQuery(GET_ORDERS, {
     variables: { userId },
     skip: !userId,
   })
 
-  // 🔴 WebSocket subscription (NO polling)
-  useSubscription(ORDER_STATUS_SUBSCRIPTION, {
-    variables: { userId },
-    skip: !userId,
-    onData: ({ data }) => {
-      console.log("🔔 Component Update Received:", data)
-      // 🔁 Refetch orders when backend pushes update
-      refetch()
-    },
-  })
+  // 🔴 Smart Subscription Handling
+  React.useEffect(() => {
+    if (!subscribeToMore || !userId) return;
+
+    const unsubscribe = subscribeToMore({
+      document: ORDER_STATUS_SUBSCRIPTION,
+      variables: { userId },
+      updateQuery: (prev, { subscriptionData }) => {
+        if (!subscriptionData.data) return prev;
+
+        const newOrder = subscriptionData.data.orderStatusUpdated;
+        const currentTracking = prev.lastOrder.trackingOrders || [];
+        const currentPast = prev.lastOrder.pastOrders || [];
+
+        // Check if order exists in lists
+        const isTracking = currentTracking.some(o => o.orderId === newOrder.orderId);
+        const isPast = currentPast.some(o => o.orderId === newOrder.orderId);
+
+        // Logic: Is this order completed/delivered?
+        const isCompleted = ["delivered", "completed", "cancelled"].includes(newOrder.status.toLowerCase());
+
+        let newTracking = [...currentTracking];
+        let newPast = [...currentPast];
+
+        if (isCompleted) {
+          // If it was tracking, remove it
+          if (isTracking) {
+            newTracking = newTracking.filter(o => o.orderId !== newOrder.orderId);
+          }
+          // Add to past if not already there (or update it)
+          if (isPast) {
+            newPast = newPast.map(o => o.orderId === newOrder.orderId ? newOrder : o);
+          } else {
+            newPast = [newOrder, ...newPast];
+          }
+        } else {
+          // It is still active/tracking
+          if (isTracking) {
+            newTracking = newTracking.map(o => o.orderId === newOrder.orderId ? newOrder : o);
+          } else {
+            // It's a new active order!
+            newTracking = [newOrder, ...newTracking];
+            // If it was in past for some reason (re-opened?), remove it
+            if (isPast) newPast = newPast.filter(o => o.orderId !== newOrder.orderId);
+          }
+        }
+
+        return {
+          ...prev,
+          lastOrder: {
+            ...prev.lastOrder,
+            trackingOrders: newTracking,
+            pastOrders: newPast,
+          },
+        };
+      },
+    });
+
+    return () => unsubscribe();
+  }, [subscribeToMore, userId]);
 
   // Mutation
   const [reorder] = useMutation(REORDER_MUTATION)

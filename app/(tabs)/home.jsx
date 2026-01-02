@@ -13,7 +13,7 @@ import {
   Image,
 } from "react-native";
 import { useState, useRef } from "react";
-import { gql, useQuery } from "@apollo/client";
+import { gql, useQuery, useSubscription } from "@apollo/client";
 import { Ionicons } from "@expo/vector-icons";
 import Loader from "../../components/Loader";
 import DishModal from "../../components/DishModal";
@@ -33,14 +33,28 @@ const GET_RESTAURANTS = gql`
   }
 `;
 
+const RESTAURANTS_LIST_SUB = gql`
+  subscription OnRestaurantsListUpdate {
+    restaurantsListUpdated {
+      name
+      displayName
+      imageUrl
+      login
+    }
+  }
+`;
+
 const Home = () => {
   const { loading, data, error } = useQuery(GET_RESTAURANTS);
+  const { data: realtimeList } = useSubscription(RESTAURANTS_LIST_SUB);
   const [selectedDish, setSelectedDish] = useState(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
-  const restaurants = (data?.getRestaurents || []).map((restaurant, index) => ({
+  const displayList = realtimeList?.restaurantsListUpdated || data?.getRestaurents || [];
+
+  const restaurants = displayList.map((restaurant, index) => ({
     ...restaurant,
     // Removed manual image manipulation props
   }));
