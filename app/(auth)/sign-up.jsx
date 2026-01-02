@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMutation, gql } from '@apollo/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import client from '../../apolloClient';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 
 const SIGN_UP = gql`
@@ -40,6 +41,8 @@ export default function SignUp() {
     const [signUp, { loading, error }] = useMutation(SIGN_UP, {
         onCompleted: async (data) => {
             await AsyncStorage.setItem('token', data.signUp.token);
+            await AsyncStorage.setItem('userId', data.signUp.userId);
+            await client.clearStore();
             router.replace('/sign-in'); // Usually after sign up you might want to sign in or go home. The original logic navigated to SignIn.
         },
     });

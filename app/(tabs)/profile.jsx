@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import client from "../../apolloClient";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,6 +23,7 @@ const GET_ME = gql`
       email
       mobileNumber
       registerNumber
+      expoPushToken
     }
   }
 `;
@@ -98,143 +100,156 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("userId");
+    await client.clearStore();
     router.replace("/sign-in");
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      {/* Header */}
-      <View className="bg-orange-500 pt-12 pb-8 px-6 rounded-b-[32px] shadow-lg mb-6">
-        <View className="flex-row justify-between items-center">
-          <Text className="text-3xl font-bold text-white tracking-tight">Student Profile</Text>
-          <TouchableOpacity className="bg-white/20 p-2 rounded-full">
-            <Ionicons name="settings-outline" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-        <Text className="text-orange-100 text-sm mt-1 font-medium opacity-90">
-          Manage your account details
-        </Text>
-      </View>
+    <View className="flex-1 bg-gray-50">
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20 }}>
-        {/* Profile Card */}
-        <View className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100 items-center mb-6">
-          {/* Profile Image */}
-          <View className="relative">
-            <Image
-              source={require("../../assets/profile.jpeg")}
-              className="w-32 h-32 rounded-full border-4 border-gray-50 mb-4 bg-gray-100"
-              resizeMode="cover"
-            />
-            <View className="absolute bottom-4 right-0 bg-green-500 w-6 h-6 rounded-full border-4 border-white" />
+      {/* Scrollable Content */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+
+        {/* Header Background */}
+        <View className="bg-orange-500 h-[220px] rounded-b-[50px] items-center justify-center shadow-lg relative z-10">
+          <Text className="text-white font-outfit-bold text-3xl tracking-widest uppercase mt-4">MY PROFILE</Text>
+          <Text className="text-orange-100 font-outfit-medium text-sm opacity-80">Personal Information</Text>
+        </View>
+
+        {/* Floating Avatar Section */}
+        <View className="items-center -mt-16 z-20 mb-6">
+          <View className="relative shadow-2xl shadow-black/30">
+            <View className="bg-white p-1.5 rounded-full">
+              <Image
+                source={require("../../assets/profile.jpeg")}
+                className="w-32 h-32 rounded-full bg-gray-200"
+                resizeMode="cover"
+              />
+            </View>
+            <View className="absolute bottom-2 right-2 bg-green-500 w-7 h-7 rounded-full border-[3px] border-white shadow-sm" />
           </View>
 
-          {/* User Info */}
-          {isEditing ? (
-            <View className="w-full">
+          <View className="mt-4 items-center px-6">
+            {isEditing ? (
               <TextInput
                 value={editName}
                 onChangeText={setEditName}
-                className="text-2xl font-bold text-gray-900 text-center bg-gray-50 rounded-xl p-2 mb-2"
+                className="text-2xl font-outfit-bold text-gray-800 text-center border-b-2 border-orange-500 min-w-[200px]"
                 placeholder="Full Name"
               />
+            ) : (
+              <Text className="text-3xl font-outfit-extrabold text-gray-900 text-center tracking-tight">{userName}</Text>
+            )}
+
+            {isEditing ? (
               <TextInput
                 value={editEmail}
                 onChangeText={setEditEmail}
-                className="text-sm text-gray-500 font-medium mb-6 text-center bg-gray-50 rounded-xl p-1"
+                className="text-base text-gray-500 font-outfit-medium mt-1 text-center border-b border-gray-300 min-w-[200px]"
                 placeholder="Email Address"
               />
-            </View>
-          ) : (
-            <>
-              <Text className="text-2xl font-bold text-gray-900 text-center">{userName}</Text>
-              <Text className="text-sm text-gray-500 font-medium mb-6">{userEmail}</Text>
-            </>
-          )}
+            ) : (
+              <Text className="text-base text-gray-500 font-outfit-medium mt-1">{userEmail}</Text>
+            )}
+          </View>
+        </View>
 
-          <View className="w-full bg-gray-50 rounded-2xl p-4 mb-2">
-            <View className="flex-row justify-between items-center mb-3">
-              <Text className="text-gray-500 font-medium">Register No</Text>
+        {/* Info Cards */}
+        <View className="px-6 space-y-4">
+
+          {/* Register Number */}
+          <View className="bg-white p-4 rounded-3xl flex-row items-center border border-gray-100 shadow-sm">
+            <Ionicons name="id-card-outline" size={24} color="#4B5563" />
+            <View className="flex-1 ml-4 py-1">
+              <Text className="text-sm text-gray-500 font-outfit-medium">Register Number</Text>
               {isEditing ? (
                 <TextInput
                   value={editRegister}
                   onChangeText={setEditRegister}
-                  className="text-gray-900 font-bold bg-white px-2 py-1 rounded-lg border border-gray-200"
-                  placeholder="Register Number"
+                  className="text-lg font-outfit-bold text-gray-900 border-b border-gray-200 p-0 mt-1"
                 />
               ) : (
-                <Text className="text-gray-900 font-bold">{userRegister}</Text>
+                <Text className="text-lg font-outfit-bold text-gray-900 mt-0.5">{userRegister}</Text>
               )}
             </View>
-            <View className="h-[1px] bg-gray-200 mb-3" />
-            <View className="flex-row justify-between items-center mb-3">
-              <Text className="text-gray-500 font-medium">Mobile</Text>
+          </View>
+
+          {/* Mobile Number */}
+          <View className="bg-white p-4 rounded-3xl flex-row items-center border border-gray-100 shadow-sm">
+            <Ionicons name="call-outline" size={24} color="#4B5563" />
+            <View className="flex-1 ml-4 py-1">
+              <Text className="text-sm text-gray-500 font-outfit-medium">Mobile Number</Text>
               {isEditing ? (
                 <TextInput
                   value={editMobile}
                   onChangeText={setEditMobile}
                   keyboardType="phone-pad"
-                  className="text-gray-900 font-bold bg-white px-2 py-1 rounded-lg border border-gray-200"
-                  placeholder="Mobile Number"
+                  className="text-lg font-outfit-bold text-gray-900 border-b border-gray-200 p-0 mt-1"
                 />
               ) : (
-                <Text className="text-gray-900 font-bold">{userMobile}</Text>
+                <Text className="text-lg font-outfit-bold text-gray-900 mt-0.5">{userMobile}</Text>
               )}
             </View>
-            <View className="h-[1px] bg-gray-200 mb-3" />
-            <View className="flex-row justify-between items-center mb-3">
-              <Text className="text-gray-500 font-medium">Batch</Text>
-              <Text className="text-gray-900 font-bold">2021 - 2025</Text>
+          </View>
+
+          {/* Batch & Dept Split */}
+          <View className="flex-row space-x-4">
+            <View className="flex-1 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex-row items-center">
+              <View className="flex-1">
+                <Text className="text-sm text-gray-500 font-outfit-medium">Batch</Text>
+                <Text className="text-lg font-outfit-bold text-gray-900 mt-0.5">2021-25</Text>
+              </View>
             </View>
-            <View className="h-[1px] bg-gray-200 mb-3" />
-            <View className="flex-row justify-between items-start">
-              <Text className="text-gray-500 font-medium">Department</Text>
-              <Text className="text-gray-900 font-bold text-right w-40">Computer Science & Engineering</Text>
+
+            <View className="flex-1 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex-row items-center">
+              <View className="flex-1">
+                <Text className="text-sm text-gray-500 font-outfit-medium">Dept</Text>
+                <Text className="text-lg font-outfit-bold text-gray-900 mt-0.5">CSE</Text>
+              </View>
             </View>
           </View>
+
         </View>
 
-        {/* Buttons */}
-        <View className="mb-10">
+        {/* Action Buttons */}
+        <View className="px-5 mt-8 space-y-3">
           {isEditing ? (
-            <>
-              <TouchableOpacity
-                onPress={handleUpdateProfile}
-                className="bg-green-500 py-4 rounded-2xl shadow-lg shadow-green-200 mb-4 flex-row justify-center items-center"
-              >
-                <Ionicons name="checkmark-circle-outline" size={20} color="white" style={{ marginRight: 8 }} />
-                <Text className="text-white font-bold text-lg">Save Changes</Text>
-              </TouchableOpacity>
-
+            <View className="flex-row space-x-3">
               <TouchableOpacity
                 onPress={() => setIsEditing(false)}
-                className="bg-white py-4 rounded-2xl border border-gray-200 flex-row justify-center items-center"
+                className="flex-1 py-4 bg-gray-200 rounded-xl items-center justify-center"
               >
-                <Ionicons name="close-circle-outline" size={20} color="#6B7280" style={{ marginRight: 8 }} />
-                <Text className="text-gray-500 font-bold text-lg">Cancel</Text>
+                <Text className="text-gray-600 font-outfit-bold">Cancel</Text>
               </TouchableOpacity>
-            </>
+              <TouchableOpacity
+                onPress={handleUpdateProfile}
+                className="flex-1 py-4 bg-black rounded-xl items-center justify-center shadow-md"
+              >
+                <Text className="text-white font-outfit-bold">Save Changes</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <>
               <TouchableOpacity
                 onPress={() => setIsEditing(true)}
-                className="bg-orange-500 py-4 rounded-2xl shadow-lg shadow-orange-200 mb-4 flex-row justify-center items-center"
+                className="w-full py-4 bg-black rounded-xl flex-row items-center justify-center shadow-lg shadow-gray-300"
               >
                 <Ionicons name="create-outline" size={20} color="white" style={{ marginRight: 8 }} />
-                <Text className="text-white font-bold text-lg">Edit Profile</Text>
+                <Text className="text-white font-outfit-bold text-base">Edit Profile</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleLogout}
-                className="bg-white py-4 rounded-2xl border border-gray-200 flex-row justify-center items-center"
+                className="w-full py-4 bg-white border border-gray-200 rounded-xl flex-row items-center justify-center"
               >
-                <Ionicons name="log-out-outline" size={20} color="#EF4444" style={{ marginRight: 8 }} />
-                <Text className="text-red-500 font-bold text-lg">Logout</Text>
+                <Text className="text-red-500 font-outfit-bold text-base">Sign Out</Text>
               </TouchableOpacity>
             </>
           )}
         </View>
+
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

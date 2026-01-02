@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, gql } from "@apollo/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import client from "../../apolloClient";
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 
 const SIGN_IN = gql`
@@ -36,6 +37,8 @@ export default function SignIn() {
   const [signIn, { loading, error }] = useMutation(SIGN_IN, {
     onCompleted: async (data) => {
       await AsyncStorage.setItem("token", data.signIn.token);
+      await AsyncStorage.setItem("userId", data.signIn.userId);
+      await client.clearStore();
       router.replace("/home");
     },
     onError: (err) => {
@@ -133,7 +136,7 @@ export default function SignIn() {
                   <View className="w-5 h-5 border border-orange-300 rounded mr-2" />
                   <Text className="text-gray-500 text-sm">Remember me</Text>
                 </TouchableOpacity>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push("/forgot-password")}>
                   <Text className="text-gray-500 text-sm">Forgot Password</Text>
                 </TouchableOpacity>
               </View>
@@ -143,23 +146,7 @@ export default function SignIn() {
                   {error.message}
                 </Text>
               )}
-              {loginError && (
-                <TouchableOpacity
-                  onPress={() => router.push("/forgot-password")} // navigate to ForgotPassword screen
-                  style={{ marginBottom: 12 }}
-                >
-                  <Text
-                    style={{
-                      color: "#F97316",
-                      textAlign: "center",
-                      fontWeight: "600",
-                      textDecorationLine: "underline",
-                    }}
-                  >
-                    Forgot Password?
-                  </Text>
-                </TouchableOpacity>
-              )}
+              
               {/* Sign In Button */}
               <TouchableOpacity // Sign In Action
                 onPress={() => signIn({ variables: { email, password } })}
