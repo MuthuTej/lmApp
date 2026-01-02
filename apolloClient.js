@@ -9,31 +9,31 @@ import {
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';
 import { getMainDefinition } from '@apollo/client/utilities';
+import { setContext } from '@apollo/client/link/context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ---------------- HTTP ----------------
 const httpLink = new HttpLink({
   uri: 'https://lm-backend-zrtl.onrender.com/graphql',
-  //uri: 'http://10.247.197.202:4000/graphql',
+  // uri: 'http://192.168.1.8:4000/graphql',
 });
 
 // ---------------- Auth ----------------
-const authLink = new ApolloLink((operation, forward) => {
-  return AsyncStorage.getItem('token').then((token) => {
-    operation.setContext({
-      headers: {
-        Authorization: token ? `Bearer ${token}` : '',
-      },
-    });
-    return forward(operation);
-  });
+const authLink = setContext(async (_, { headers }) => {
+  const token = await AsyncStorage.getItem('token');
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : '',
+    }
+  };
 });
 
 // ---------------- WebSocket ----------------
 const wsLink = new GraphQLWsLink(
   createClient({
     url: 'wss://lm-backend-zrtl.onrender.com/graphql',
-    //url: 'ws://10.247.197.202:4000/graphql',
+    // url: 'ws://192.168.1.8:4000/graphql',
     connectionParams: async () => {
       const token = await AsyncStorage.getItem('token');
       return {

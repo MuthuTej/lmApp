@@ -10,12 +10,16 @@ export default function Page() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = await AsyncStorage.getItem('token');
-      if (token) {
-        // User already logged in → go to main tabs
+      const [token, userId] = await Promise.all([
+        AsyncStorage.getItem('token'),
+        AsyncStorage.getItem('userId'),
+      ]);
+
+      if (token && userId) {
+        // User already logged in and has userId → go to main tabs
         router.replace('/home');
       } else {
-        // No token → Show Landing Page
+        // Missing token or userId → Show Landing Page
         setLoading(false);
       }
     };

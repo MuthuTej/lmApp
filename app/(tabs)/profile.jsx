@@ -7,6 +7,7 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -23,9 +24,8 @@ const GET_ME = gql`
       email
       mobileNumber
       registerNumber
-      batch
       department
-      expoPushToken
+      batch
     }
   }
 `;
@@ -62,7 +62,7 @@ const EDIT_PROFILE = gql`
 
 export default function Profile() {
   const router = useRouter();
-  const { data: meData, loading: meLoading } = useQuery(GET_ME);
+  const { data: meData, loading: meLoading, error: meError } = useQuery(GET_ME);
   const [editProfileMutation] = useMutation(EDIT_PROFILE, {
     onCompleted: () => {
       setIsEditing(false);
@@ -85,7 +85,7 @@ export default function Profile() {
   const userMobile = user.mobileNumber || "Not provided";
   const userRegister = user.registerNumber || "Not provided";
   const userDepartment = user.department || "Not provided";
-const userBatch = user.batch || "Not provided";
+  const userBatch = user.batch || "Not provided";
   React.useEffect(() => {
     if (user.id) {
       setEditName(user.name || "");
@@ -118,6 +118,30 @@ const userBatch = user.batch || "Not provided";
     await client.clearStore();
     router.replace("/sign-in");
   };
+
+  if (meLoading) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#f66c3a" />
+      </SafeAreaView>
+    );
+  }
+
+  if (meError) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-white p-6">
+        <Ionicons name="alert-circle-outline" size={80} color="#EF4444" />
+        <Text className="text-xl font-outfit-bold text-gray-900 mt-4 text-center">Failed to load profile</Text>
+        <Text className="text-gray-500 text-center mt-2 mb-6">Error: {meError.message}</Text>
+        <TouchableOpacity
+          onPress={() => router.replace("/sign-in")}
+          className="bg-orange-500 px-8 py-3 rounded-full shadow-lg"
+        >
+          <Text className="text-white font-outfit-bold">Go to Login</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -172,70 +196,32 @@ const userBatch = user.batch || "Not provided";
         {/* Info Cards */}
         <View className="px-6 space-y-4">
 
-          {/* Register Number */}
-          <View className="bg-white p-4 rounded-3xl flex-row items-center border border-gray-100 shadow-sm">
-            <Ionicons name="id-card-outline" size={24} color="#4B5563" />
-            <View className="flex-1 ml-4 py-1">
-              <Text className="text-sm text-gray-500 font-outfit-medium">Register Number</Text>
-              {isEditing ? (
-                <TextInput
-                  value={editRegister}
-                  onChangeText={setEditRegister}
-                  className="text-lg font-outfit-bold text-gray-900 border-b border-gray-200 p-0 mt-1"
-                />
-              ) : (
-                <Text className="text-lg font-outfit-bold text-gray-900 mt-0.5">{userRegister}</Text>
-              )}
+          {/* Card Item Helper */}
+          {[
+            { label: "Register Number", value: userRegister, icon: "id-card-outline" },
+            { label: "Mobile Number", value: userMobile, icon: "call-outline" },
+            { label: "Batch", value: userBatch, icon: "calendar-outline" },
+            { label: "Department", value: userDepartment, icon: "business-outline" },
+          ].map((item, index) => (
+            <View key={index} className="bg-white p-4 rounded-3xl flex-row items-center border border-gray-100 shadow-sm mb-4">
+              <View className="bg-orange-50 p-2 rounded-xl">
+                <Ionicons name={item.icon} size={22} color="#f66c3a" />
+              </View>
+              <View className="flex-1 ml-4">
+                <Text className="text-xs text-gray-400 font-outfit-bold uppercase tracking-wider">{item.label}</Text>
+                {isEditing && (index === 0 ? true : index === 1 ? true : index === 2 ? true : true) ? (
+                  <TextInput
+                    value={index === 0 ? editRegister : index === 1 ? editMobile : index === 2 ? editBatch : editDepartment}
+                    onChangeText={index === 0 ? setEditRegister : index === 1 ? setEditMobile : index === 2 ? setEditBatch : setEditDepartment}
+                    keyboardType={index === 1 ? "phone-pad" : "default"}
+                    className="text-lg font-outfit-bold text-gray-900 border-b border-orange-100 p-0 mt-1"
+                  />
+                ) : (
+                  <Text className="text-lg font-outfit-bold text-gray-900 mt-0.5">{item.value}</Text>
+                )}
+              </View>
             </View>
-          </View>
-
-          {/* Mobile Number */}
-          <View className="bg-white p-4 rounded-3xl flex-row items-center border border-gray-100 shadow-sm">
-            <Ionicons name="call-outline" size={24} color="#4B5563" />
-            <View className="flex-1 ml-4 py-1">
-              <Text className="text-sm text-gray-500 font-outfit-medium">Mobile Number</Text>
-              {isEditing ? (
-                <TextInput
-                  value={editMobile}
-                  onChangeText={setEditMobile}
-                  keyboardType="phone-pad"
-                  className="text-lg font-outfit-bold text-gray-900 border-b border-gray-200 p-0 mt-1"
-                />
-              ) : (
-                <Text className="text-lg font-outfit-bold text-gray-900 mt-0.5">{userMobile}</Text>
-              )}
-            </View>
-            <View className="h-[1px] bg-gray-200 mb-3" />
-            <View className="flex-row justify-between items-center mb-3">
-              <Text className="text-gray-500 font-medium">Batch</Text>
-              {isEditing ? (
-            <TextInput
-              value={editBatch}
-              onChangeText={setEditBatch}
-              className="text-gray-900 font-bold bg-white px-2 py-1 rounded-lg border border-gray-200"
-              placeholder="Batch (e.g. 2021-2025)"
-            />
-          ) : (
-            <Text className="text-gray-900 font-bold">{userBatch}</Text>
-          )}
-            </View>
-            <View className="h-[1px] bg-gray-200 mb-3" />
-            <View className="flex-row justify-between items-start">
-              <Text className="text-gray-500 font-medium">Department</Text>
-             {isEditing ? (
-            <TextInput
-              value={editDepartment}
-              onChangeText={setEditDepartment}
-              className="text-gray-900 font-bold bg-white px-2 py-1 rounded-lg border border-gray-200 text-right"
-              placeholder="Department"
-            />
-          ) : (
-            <Text className="text-gray-900 font-bold text-right w-40">
-              {userDepartment}
-            </Text>
-          )}
-            </View>
-          </View>
+          ))}
 
         </View>
 
