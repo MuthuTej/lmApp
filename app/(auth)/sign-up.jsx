@@ -13,14 +13,19 @@ const SIGN_UP = gql`
     $password: String!, 
     $name: String!, 
     $mobileNumber: String!, 
-    $registerNumber: String!
+    $registerNumber: String!,
+    $batch: String!
+     $department: String!
   ) {
     signUp(
       email: $email, 
       password: $password, 
       name: $name, 
       mobileNumber: $mobileNumber, 
-      registerNumber: $registerNumber
+      registerNumber: $registerNumber,
+        batch: $batch
+        department: $department
+
     ) {
       token
       userId
@@ -35,6 +40,8 @@ export default function SignUp() {
     const [mobileNumber, setMobileNumber] = useState('');
     const [registerNumber, setRegisterNumber] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [batch, setBatch] = useState('');
+    const [department, setDepartment] = useState('');
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
@@ -47,7 +54,7 @@ export default function SignUp() {
         },
     });
 
-    const handleSignUp = () => {
+  
         /* 
         // Removing old validation restricted to citchennai.net as it might not be desired for the new general design 
         // unless specified. The user said "implement make the sign in/ sign up pages in this same design", 
@@ -60,21 +67,36 @@ export default function SignUp() {
         I'll keep standard validation (empty check).
         */
 
-        if (!name.trim() || !email.trim() || !password.trim() || !mobileNumber.trim() || !registerNumber.trim()) {
-            Alert.alert('Missing Fields', 'Please fill in all fields (Name, Email, Password, Mobile, and Register Number).');
-            return;
-        }
+ const handleSignUp = () => {
+  if (
+    !name.trim() ||
+    !email.trim() ||
+    !password.trim() ||
+    !mobileNumber.trim() ||
+    !registerNumber.trim() ||
+    !batch.trim() ||
+    !department.trim()
+  ) {
+    Alert.alert(
+      'Missing Fields',
+      'Please fill in all fields including Batch.'
+    );
+    return;
+  }
 
-        signUp({
-            variables: {
-                email,
-                password,
-                name,
-                mobileNumber,
-                registerNumber
-            }
-        });
-    };
+  signUp({
+    variables: {
+      email,
+      password,
+      name,
+      mobileNumber,
+      registerNumber,
+      batch,
+      department
+    }
+  });
+};
+
 
     return (
         <View className="flex-1 bg-white">
@@ -153,7 +175,28 @@ export default function SignUp() {
                                     placeholderTextColor="#9CA3AF"
                                 />
                             </View>
+                            {/* Batch Input */}
+                     <View className="mb-4">
+                           <TextInput
+                            placeholder="Enter Batch (e.g. 2022–2026)"
+                                 value={batch}
+                                onChangeText={setBatch}
+                                className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-4 text-gray-800"
+                                placeholderTextColor="#9CA3AF"
+                                       />
+                               </View>
 
+                                    {/* Department Input */}
+                        <View className="mb-4">
+                            <TextInput
+                            placeholder="Enter Department"
+                                 value={department}
+                                onChangeText={setDepartment}
+                                className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-4 text-gray-800"
+                                placeholderTextColor="#9CA3AF"
+                                       />
+                               </View>
+                            
                             {/* Email Input */}
                             <View className="mb-4">
                                 <TextInput
