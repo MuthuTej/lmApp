@@ -114,13 +114,33 @@ const REORDER_MUTATION = gql`
   }
 `
 
+const GET_CART = gql`
+  query GetCart($userId: String!) {
+    getCart(userId: $userId) {
+      createdAt
+      items {
+        dishId
+        dishName
+        imageUrl
+        price
+        quantity
+      }
+      restaurantId
+      status
+      userName
+    }
+  }
+`;
+
 // ==================== COMPONENT ====================
 
 const Reorder = () => {
   const { data: meData, loading: meLoading } = useQuery(ME)
   const userId = meData?.me?.id
 
-  const [reorder] = useMutation(REORDER_MUTATION)
+  const [reorder] = useMutation(REORDER_MUTATION, {
+    refetchQueries: [{ query: GET_CART, variables: { userId } }],
+  })
 
   const {
     data,
