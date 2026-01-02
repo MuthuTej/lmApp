@@ -23,6 +23,8 @@ const GET_ME = gql`
       email
       mobileNumber
       registerNumber
+      batch
+      department
       expoPushToken
     }
   }
@@ -34,20 +36,26 @@ const EDIT_PROFILE = gql`
     $name: String, 
     $email: String, 
     $mobileNumber: String, 
-    $registerNumber: String
+    $registerNumber: String,
+    $batch: String
+    $department: String
   ) {
     editProfile(
       userId: $userId, 
       name: $name, 
       email: $email, 
       mobileNumber: $mobileNumber, 
-      registerNumber: $registerNumber
+      registerNumber: $registerNumber,
+      batch: $batch,
+      department: $department
     ) {
       id
       name
       email
       mobileNumber
       registerNumber
+      batch
+      department
     }
   }
 `;
@@ -68,20 +76,24 @@ export default function Profile() {
   const [editEmail, setEditEmail] = React.useState("");
   const [editMobile, setEditMobile] = React.useState("");
   const [editRegister, setEditRegister] = React.useState("");
-
+  const [editBatch, setEditBatch] = React.useState("");
+  const [editDepartment, setEditDepartment] = React.useState("");
   const user = meData?.me || {};
   const userId = user.id || null;
   const userName = user.name || "Guest User";
   const userEmail = user.email || "No email available";
   const userMobile = user.mobileNumber || "Not provided";
   const userRegister = user.registerNumber || "Not provided";
-
+  const userDepartment = user.department || "Not provided";
+const userBatch = user.batch || "Not provided";
   React.useEffect(() => {
     if (user.id) {
       setEditName(user.name || "");
       setEditEmail(user.email || "");
       setEditMobile(user.mobileNumber || "");
       setEditRegister(user.registerNumber || "");
+      setEditBatch(user.batch || "");
+      setEditDepartment(user.department || "");
     }
   }, [user]);
 
@@ -94,6 +106,8 @@ export default function Profile() {
         email: editEmail,
         mobileNumber: editMobile,
         registerNumber: editRegister,
+        batch: editBatch,
+        department: editDepartment,
       },
     });
   };
@@ -191,22 +205,35 @@ export default function Profile() {
                 <Text className="text-lg font-outfit-bold text-gray-900 mt-0.5">{userMobile}</Text>
               )}
             </View>
-          </View>
-
-          {/* Batch & Dept Split */}
-          <View className="flex-row space-x-4">
-            <View className="flex-1 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex-row items-center">
-              <View className="flex-1">
-                <Text className="text-sm text-gray-500 font-outfit-medium">Batch</Text>
-                <Text className="text-lg font-outfit-bold text-gray-900 mt-0.5">2021-25</Text>
-              </View>
+            <View className="h-[1px] bg-gray-200 mb-3" />
+            <View className="flex-row justify-between items-center mb-3">
+              <Text className="text-gray-500 font-medium">Batch</Text>
+              {isEditing ? (
+            <TextInput
+              value={editBatch}
+              onChangeText={setEditBatch}
+              className="text-gray-900 font-bold bg-white px-2 py-1 rounded-lg border border-gray-200"
+              placeholder="Batch (e.g. 2021-2025)"
+            />
+          ) : (
+            <Text className="text-gray-900 font-bold">{userBatch}</Text>
+          )}
             </View>
-
-            <View className="flex-1 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex-row items-center">
-              <View className="flex-1">
-                <Text className="text-sm text-gray-500 font-outfit-medium">Dept</Text>
-                <Text className="text-lg font-outfit-bold text-gray-900 mt-0.5">CSE</Text>
-              </View>
+            <View className="h-[1px] bg-gray-200 mb-3" />
+            <View className="flex-row justify-between items-start">
+              <Text className="text-gray-500 font-medium">Department</Text>
+             {isEditing ? (
+            <TextInput
+              value={editDepartment}
+              onChangeText={setEditDepartment}
+              className="text-gray-900 font-bold bg-white px-2 py-1 rounded-lg border border-gray-200 text-right"
+              placeholder="Department"
+            />
+          ) : (
+            <Text className="text-gray-900 font-bold text-right w-40">
+              {userDepartment}
+            </Text>
+          )}
             </View>
           </View>
 
