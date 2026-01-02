@@ -231,9 +231,13 @@ const Home = () => {
             </View>
             <Text className="text-orange-100 text-base mt-2 font-outfit-medium tracking-wide">Find your favorite meals</Text>
           </View>
-          <View className="bg-white/20 p-3 rounded-full border border-white/30">
-            <Ionicons name="notifications-outline" size={26} color="white" />
-          </View>
+          <TouchableOpacity
+            className="bg-white/20 p-3 rounded-full border border-white/30"
+            activeOpacity={0.7}
+            onPress={() => router.push("/(tabs)/food")}
+          >
+            <Ionicons name="cart-outline" size={26} color="white" />
+          </TouchableOpacity>
         </View>
 
         {/* Search Bar */}

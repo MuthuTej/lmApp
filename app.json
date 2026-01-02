@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "lmApp",
-    "slug": "lmApp",
-    "scheme": "lmapp",
+    "name": "GrabIt",
+    "slug": "GrabIt",
+    "scheme": "GrabIt",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/applogo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/applogo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
