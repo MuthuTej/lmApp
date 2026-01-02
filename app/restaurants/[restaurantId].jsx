@@ -16,7 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Animated } from "react-native";
 import { useRef, useEffect } from "react";
 import Loader from "../../components/Loader";
-import { gql, useQuery } from "@apollo/client";
+import { gql, useQuery, useSubscription } from "@apollo/client";
 
 const screenWidth = Dimensions.get("window").width;
 const cardGap = 20;
@@ -35,6 +35,24 @@ const GET_MENU_BY_RESTAURANT_NAME = gql`
       }
       isOpen
       logo
+    }
+  }
+`;
+
+const RESTAURANT_UPDATED_SUB = gql`
+  subscription OnRestaurantUpdate($restaurantId: String!) {
+    restaurantUpdated(restaurantId: $restaurantId) {
+      name
+      isOpen
+      logo
+      menu {
+        name
+        price
+        isAvailable
+        category
+        description
+        imageUrl
+      }
     }
   }
 `;
@@ -68,6 +86,9 @@ export default function RestaurantScreen() {
     variables: { name: restaurantId },
   });
 
+  const { data: realtimeData } = useSubscription(RESTAURANT_UPDATED_SUB, {
+    variables: { restaurantId: restaurantId },
+  });
   const updateSuggestions = (text) => {
     setSearchQuery(text);
     if (text.length > 1 && data?.getMenuByRestaurantName?.menu) {
@@ -85,7 +106,7 @@ export default function RestaurantScreen() {
   if (loading) return <Loader text="Loading menu..." />;
   if (error) return <Text>Error: {error.message}</Text>;
 
-  const restaurant = data.getMenuByRestaurantName;
+  const restaurant = realtimeData?.restaurantUpdated || data.getMenuByRestaurantName;
   const menu = restaurant.menu.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.category.toLowerCase().includes(searchQuery.toLowerCase())
