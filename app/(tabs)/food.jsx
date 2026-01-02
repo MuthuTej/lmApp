@@ -11,8 +11,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { gql, useQuery, useMutation } from "@apollo/client";
+import { gql, useQuery, useMutation, useApolloClient } from "@apollo/client";
 import { WebView } from "react-native-webview";
+import { useRouter } from "expo-router";
+
+import { useEffect, useRef } from "react";
 
 // ------------------ GraphQL ------------------
 
@@ -92,6 +95,8 @@ const CREATE_CASHFREE_ORDER = gql`
   }
 `;
 
+
+
 const ME = gql`
   query GetMe {
     me {
@@ -107,6 +112,8 @@ const ME = gql`
 // ------------------ Component ------------------
 
 export default function CartScreen() {
+  const router = useRouter();
+  const client = useApolloClient();
   const { data: meData, loading: meLoading } = useQuery(ME);
   const userId = meData?.me?.id || null;
   const userName = meData?.me?.name || null;
@@ -114,6 +121,8 @@ export default function CartScreen() {
   const [loadingItemId, setLoadingItemId] = useState(null);
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [showWebView, setShowWebView] = useState(false);
+
+
 
   const { data, loading, refetch } = useQuery(GET_CART, {
     variables: { userId },
@@ -153,7 +162,11 @@ export default function CartScreen() {
 
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+
+
   // ------------------ Handlers ------------------
+
+
 
   const handleQuantityChange = (item, change) => {
     setLoadingItemId(item.dishId);
@@ -252,9 +265,11 @@ export default function CartScreen() {
             <Text className="text-white font-outfit-bold text-xs uppercase tracking-wide ml-2">Clear</Text>
           </TouchableOpacity>
         </View>
-        <Text className="text-orange-50 text-sm font-outfit-medium tracking-wide opacity-90 pl-1">
+        <Text className="text-orange-50 text-sm font-outfit-medium tracking-wide opacity-90 pl-1 mb-4">
           {data?.getCart?.items?.length || 0} items waiting for you
         </Text>
+
+
       </View>
 
       {/* Cart Items */}

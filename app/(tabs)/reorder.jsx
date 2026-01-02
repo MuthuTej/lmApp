@@ -1,9 +1,10 @@
 import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native'
 import React from 'react'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { gql, useQuery, useMutation } from "@apollo/client" // Removed useSubscription, handled in useQuery
 
-import { gql, useQuery, useMutation } from "@apollo/client"
+// -------------------- QUERIES --------------------
 
-// Query to get user info
 const ME = gql`
   query GetMe {
     me {
@@ -50,7 +51,44 @@ const GET_ORDERS = gql`
   }
 `
 
-// Reorder mutation
+// -------------------- SUBSCRIPTION --------------------
+
+// 🔹 UPDATED: Now expects the FULL LISTS, not a single order
+const ORDER_STATUS_SUBSCRIPTION = gql`
+  subscription OrderStatusUpdated($userId: String!) {
+    orderStatusUpdated(userId: $userId) {
+      trackingOrders {
+        internalOrderId
+        orderId
+        items {
+          dishName
+          price
+          quantity
+          imageUrl
+        }
+        total
+        createdAt
+        status
+      }
+      pastOrders {
+        internalOrderId
+        orderId
+        items {
+          dishName
+          price
+          quantity
+          imageUrl
+        }
+        total
+        createdAt
+        status
+      }
+    }
+  }
+`
+
+// -------------------- MUTATION --------------------
+
 const REORDER_MUTATION = gql`
   mutation Reorder($userId: String!, $internalOrderId: String, $forceAdd: Boolean) {
     reorder(
@@ -76,40 +114,59 @@ const REORDER_MUTATION = gql`
   }
 `
 
+// ==================== COMPONENT ====================
+
 const Reorder = () => {
-  // Fetch user
-  const { data: meData, loading: meLoading, error: meError } = useQuery(ME)
+  const { data: meData, loading: meLoading } = useQuery(ME)
   const userId = meData?.me?.id
 
-  // Mutation
   const [reorder] = useMutation(REORDER_MUTATION)
 
-  // Fetch orders (only when userId is available)
-  const { data, loading, error, refetch } = useQuery(GET_ORDERS, {
+  const {
+    data,
+    loading,
+    error,
+    refetch,
+    subscribeToMore,
+  } = useQuery(GET_ORDERS, {
     variables: { userId },
     skip: !userId,
-    pollInterval: 5000, // ✅ Refetch every 5 seconds to get status updates
   })
 
-  // Handle loading & error states
-  if (meLoading || loading) {
-    return <Text className="p-4">Loading...</Text>
-  }
-  if (meError) {
-    return <Text className="p-4">Error: {meError.message}</Text>
-  }
-  if (error) {
-    return <Text className="p-4">Error: {error.message}</Text>
-  }
+  // � UPDATED: Simplified Logic (Syncs entire list)
+  React.useEffect(() => {
+    if (!subscribeToMore || !userId) return;
 
-  if (!data?.lastOrder) {
-    return <Text className="p-4">No orders found.</Text>
-  }
+    const unsubscribe = subscribeToMore({
+      document: ORDER_STATUS_SUBSCRIPTION,
+      variables: { userId },
+      updateQuery: (prev, { subscriptionData }) => {
+        if (!subscriptionData.data) return prev;
 
-  const { trackingOrders, pastOrders } = data.lastOrder
+        console.log("🔔 Full order list update received");
 
-  // Handle reorder
+        // 🟢 Direct replacement - No complex logic needed!
+        return {
+          ...prev,
+          lastOrder: subscriptionData.data.orderStatusUpdated,
+        };
+      },
+    });
+
+    return () => unsubscribe();
+  }, [subscribeToMore, userId]);
+
+
+  if (meLoading || loading) return <Text className="p-4">Loading...</Text>
+  if (error) return <Text className="p-4">Error: {error.message}</Text>
+
+  // Safe access
+  const trackingOrders = data?.lastOrder?.trackingOrders || []
+  const pastOrders = data?.lastOrder?.pastOrders || []
+
+
   const handleReorder = async (orderId) => {
+    // ... keep your existing reorder logic ...
     if (!orderId) {
       Alert.alert("Error", "Cannot identify this order. internalOrderId is missing.");
       return;
@@ -122,16 +179,16 @@ const Reorder = () => {
       };
 
       const res = await reorder({ variables });
-      const data = res.data.reorder;
+      const result = res.data.reorder;
 
-      // 🟢 All items available (or successfully added)
-      if (data.status === "ALL_AVAILABLE") {
+      // 🟢 All items available
+      if (result.status === "ALL_AVAILABLE") {
         Alert.alert("Reorder added", "Items have been added to your cart");
         return;
       }
 
       // 🔴 No items available
-      if (data.status === "NO_ITEMS_AVAILABLE") {
+      if (result.status === "NO_ITEMS_AVAILABLE") {
         Alert.alert(
           "Items unavailable",
           "None of the items from this order are currently available."
@@ -140,8 +197,8 @@ const Reorder = () => {
       }
 
       // 🟡 Partial availability
-      if (data.status === "PARTIAL_AVAILABLE") {
-        const unavailableNames = data.unavailableItems
+      if (result.status === "PARTIAL_AVAILABLE") {
+        const unavailableNames = result.unavailableItems
           .map(i => i.dishName)
           .join(", ");
 
@@ -155,11 +212,9 @@ const Reorder = () => {
               onPress: async () => {
                 const retryVariables = {
                   userId,
-                  forceAdd: true
+                  forceAdd: true,
+                  internalOrderId: orderId
                 };
-                if (orderId) {
-                  retryVariables.internalOrderId = orderId;
-                }
 
                 await reorder({
                   variables: retryVariables
@@ -180,7 +235,6 @@ const Reorder = () => {
     }
   }
 
-
   // Convert status → progress
   const getProgress = (status) => {
     switch (status) {
@@ -191,13 +245,13 @@ const Reorder = () => {
     }
   }
 
+
   // Order card
   const renderOrderCard = (order, isPast = false) => {
     const progress = getProgress(order.status)
-
     return (
       <View
-        key={order.orderId}
+        key={order.internalOrderId}
         className="bg-white rounded-[24px] p-5 mb-6 shadow-lg shadow-orange-500/25 border-2 border-orange-200"
       >
         {/* Header: Date & Total */}
@@ -255,10 +309,10 @@ const Reorder = () => {
             )}
           </View>
 
-          {/* Reorder button only for past orders */}
+          {/* Reorder button */}
           {isPast && (
             <TouchableOpacity
-              onPress={handleReorder}
+              onPress={() => handleReorder(order.internalOrderId)}
               className="bg-orange-500 px-5 py-2 rounded-full shadow-lg shadow-orange-500/30"
             >
               <Text className="text-white font-outfit-bold text-xs tracking-wide">Reorder</Text>
@@ -295,7 +349,6 @@ const Reorder = () => {
                 Refresh
               </Text>
             </TouchableOpacity>
-
           </View>
 
           {trackingOrders.length > 0

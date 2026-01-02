@@ -13,7 +13,7 @@ import {
   Image,
 } from "react-native";
 import { useState, useRef } from "react";
-import { gql, useQuery } from "@apollo/client";
+import { gql, useQuery, useSubscription } from "@apollo/client";
 import { Ionicons } from "@expo/vector-icons";
 import Loader from "../../components/Loader";
 import DishModal from "../../components/DishModal";
@@ -33,25 +33,67 @@ const GET_RESTAURANTS = gql`
   }
 `;
 
+const RESTAURANTS_LIST_SUB = gql`
+  subscription OnRestaurantsListUpdate {
+    restaurantsListUpdated {
+      name
+      displayName
+      imageUrl
+      login
+    }
+  }
+`;
+
+const GET_MENU_BY_RESTAURANT_NAME = gql`
+  query GetMenuByRestaurantName($name: String!) {
+    getMenuByRestaurantName(name: $name) {
+      name
+      menu {
+        name
+        category
+        description
+        imageUrl
+        isAvailable
+        price
+      }
+      isOpen
+      logo
+    }
+  }
+`;
+
+import { useRouter } from "expo-router";
+import { useApolloClient } from "@apollo/client";
+
 const Home = () => {
+  const router = useRouter();
+  const client = useApolloClient();
   const { loading, data, error } = useQuery(GET_RESTAURANTS);
+  const { data: realtimeList } = useSubscription(RESTAURANTS_LIST_SUB);
   const [selectedDish, setSelectedDish] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [allRestaurantMenus, setAllRestaurantMenus] = useState([]);
+  const [menusLoaded, setMenusLoaded] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
-  const restaurants = (data?.getRestaurents || []).map((restaurant, index) => ({
+  const displayList = realtimeList?.restaurantsListUpdated || data?.getRestaurents || [];
+
+  const restaurants = displayList.map((restaurant, index) => ({
     ...restaurant,
     // Removed manual image manipulation props
   }));
   const trending = []; // Replace with your trending dishes data
 
   const foodCategories = [
-    { id: 1, name: "Pizza", image: require("../../assets/pizza.png") },
-    { id: 2, name: "Burgers", image: require("../../assets/burger.png") },
+    { id: 1, name: "Paratha", image: require("../../assets/porotto.png") },
+    { id: 5, name: "Burgers", image: require("../../assets/burger.png") },
     { id: 3, name: "Desserts", image: require("../../assets/dessert.png") },
     { id: 4, name: "Milkshake", image: require("../../assets/milkshake.png") },
-    { id: 5, name: "Pasta", image: require("../../assets/pasta.png") },
+    { id: 2, name: "Biryani", image: require("../../assets/biryani.png") },
   ];
 
   const promoOffers = [
@@ -100,11 +142,95 @@ const Home = () => {
     ]).start();
   }, []);
 
+  React.useEffect(() => {
+    if (data?.getRestaurents && !menusLoaded) {
+      const fetchAllMenus = async () => {
+        try {
+          const restaurantList = data.getRestaurents;
+          const menuResults = await Promise.all(
+            restaurantList.map(async (res) => {
+              try {
+                const { data: menuData } = await client.query({
+                  query: GET_MENU_BY_RESTAURANT_NAME,
+                  variables: { name: res.name },
+                });
+                return menuData?.getMenuByRestaurantName;
+              } catch (err) {
+                console.error(`Error fetching menu for ${res.name}:`, err);
+                return null;
+              }
+            })
+          );
+          setAllRestaurantMenus(menuResults.filter(Boolean));
+          setMenusLoaded(true);
+          console.log("✅ All menus loaded in background");
+        } catch (err) {
+          console.error("Error in background menu fetching:", err);
+        }
+      };
+
+      // Delay fetch slightly to ensure UI is interactive
+      const timer = setTimeout(fetchAllMenus, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [data, menusLoaded]);
+
   if (loading) return <Loader text="Preparing your meals :)" />;
   if (error) return <Text>Error loading restaurants: {error.message}</Text>;
 
   const handleSelectFood = (item) => {
     setSelectedDish(item);
+  };
+
+  const handleSearch = (query = searchQuery) => {
+    const finalQuery = typeof query === 'string' ? query : searchQuery;
+    if (finalQuery.trim()) {
+      setShowSuggestions(false);
+      router.push({
+        pathname: "/search",
+        params: { q: finalQuery.trim() }
+      });
+    }
+  };
+
+  const updateSuggestions = (text) => {
+    setSearchQuery(text);
+    if (text.length > 1) {
+      const filtered = [];
+      const seenItems = new Set();
+
+      allRestaurantMenus.forEach(res => {
+        res.menu.forEach(item => {
+          const itemName = item.name.toLowerCase();
+          const category = item.category.toLowerCase();
+          const searchText = text.toLowerCase();
+
+          if ((itemName.includes(searchText) || category.includes(searchText)) && !seenItems.has(item.name)) {
+            filtered.push({
+              name: item.name,
+              type: 'dish',
+              category: item.category
+            });
+            seenItems.add(item.name);
+          }
+        });
+
+        if (res.name.toLowerCase().includes(text.toLowerCase()) && !seenItems.has(res.name)) {
+          filtered.push({
+            name: (data?.getRestaurents?.find(r => r.name === res.name)?.displayName || res.name),
+            originalName: res.name,
+            type: 'restaurant'
+          });
+          seenItems.add(res.name);
+        }
+      });
+
+      setSuggestions(filtered.slice(0, 8)); // Limit to 8 suggestions
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
   };
 
   return (
@@ -119,22 +245,64 @@ const Home = () => {
             </View>
             <Text className="text-orange-100 text-base mt-2 font-outfit-medium tracking-wide">Find your favorite meals</Text>
           </View>
-          <View className="bg-white/20 p-3 rounded-full border border-white/30">
-            <Ionicons name="notifications-outline" size={26} color="white" />
-          </View>
+          <TouchableOpacity
+            className="bg-white/20 p-3 rounded-full border border-white/30"
+            activeOpacity={0.7}
+            onPress={() => router.push("/(tabs)/food")}
+          >
+            <Ionicons name="cart-outline" size={26} color="white" />
+          </TouchableOpacity>
         </View>
 
         {/* Search Bar */}
-        <View className="bg-white rounded-2xl px-4 py-3.5 flex-row items-center shadow-lg shadow-orange-900/20 border-2 border-orange-100">
-          <Ionicons name="search" size={24} color="#F97316" />
-          <TextInput
-            placeholder="Search for restaurants, dishes..."
-            className="flex-1 ml-3 text-gray-800 font-outfit-bold text-base"
-            placeholderTextColor="#9CA3AF"
-          />
-          <View className="border-l border-gray-200 pl-3 ml-2">
-            <Ionicons name="options-outline" size={24} color="#F97316" />
+        <View className="relative z-50">
+          <View className="bg-white rounded-2xl px-4 py-3.5 flex-row items-center shadow-lg shadow-orange-900/20 border-2 border-orange-100">
+            <Ionicons name="search" size={24} color="#F97316" />
+            <TextInput
+              placeholder="Search for restaurants, dishes..."
+              className="flex-1 ml-3 text-gray-800 font-outfit-bold text-base"
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={updateSuggestions}
+              onSubmitEditing={() => handleSearch()}
+              returnKeyType="search"
+              onFocus={() => searchQuery.length > 1 && setShowSuggestions(true)}
+            />
+            <TouchableOpacity
+              onPress={() => handleSearch()}
+              className="border-l border-gray-200 pl-3 ml-2"
+            >
+              <Ionicons name="options-outline" size={24} color="#F97316" />
+            </TouchableOpacity>
           </View>
+
+          {/* Suggestions Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <View className="absolute top-[65px] left-0 right-0 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+              {suggestions.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    handleSearch(item.originalName || item.name);
+                  }}
+                  className={`flex-row items-center p-4 border-b border-gray-50 ${index === suggestions.length - 1 ? 'border-b-0' : ''}`}
+                >
+                  <Ionicons
+                    name={item.type === 'dish' ? "fast-food-outline" : "restaurant-outline"}
+                    size={20}
+                    color="#F97316"
+                  />
+                  <View className="ml-3 flex-1">
+                    <Text className="text-gray-800 font-outfit-bold text-base">{item.name}</Text>
+                    {item.type === 'dish' && (
+                      <Text className="text-gray-400 font-outfit-medium text-xs">{item.category}</Text>
+                    )}
+                  </View>
+                  <Ionicons name="arrow-forward" size={16} color="#E5E7EB" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
       </View>
 
@@ -157,6 +325,7 @@ const Home = () => {
                 key={category.id}
                 className="items-center mr-3"
                 activeOpacity={0.7}
+                onPress={() => handleSearch(category.name)}
               >
                 <View className="mb-2 w-[88px] h-[88px] justify-center items-center">
                   <Image

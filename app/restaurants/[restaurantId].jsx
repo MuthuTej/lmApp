@@ -16,7 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Animated } from "react-native";
 import { useRef, useEffect } from "react";
 import Loader from "../../components/Loader";
-import { gql, useQuery } from "@apollo/client";
+import { gql, useQuery, useSubscription } from "@apollo/client";
 
 const screenWidth = Dimensions.get("window").width;
 const cardGap = 20;
@@ -39,10 +39,30 @@ const GET_MENU_BY_RESTAURANT_NAME = gql`
   }
 `;
 
+const RESTAURANT_UPDATED_SUB = gql`
+  subscription OnRestaurantUpdate($restaurantId: String!) {
+    restaurantUpdated(restaurantId: $restaurantId) {
+      name
+      isOpen
+      logo
+      menu {
+        name
+        price
+        isAvailable
+        category
+        description
+        imageUrl
+      }
+    }
+  }
+`;
+
 export default function RestaurantScreen() {
-  const { restaurantId } = useLocalSearchParams();
+  const { restaurantId, dishName } = useLocalSearchParams();
   const [selectedDish, setSelectedDish] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(dishName || "");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -66,12 +86,30 @@ export default function RestaurantScreen() {
     variables: { name: restaurantId },
   });
 
+  const { data: realtimeData } = useSubscription(RESTAURANT_UPDATED_SUB, {
+    variables: { restaurantId: restaurantId },
+  });
+  const updateSuggestions = (text) => {
+    setSearchQuery(text);
+    if (text.length > 1 && data?.getMenuByRestaurantName?.menu) {
+      const filtered = data.getMenuByRestaurantName.menu
+        .filter(item => item.name.toLowerCase().includes(text.toLowerCase()))
+        .slice(0, 5);
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
   if (loading) return <Loader text="Loading menu..." />;
   if (error) return <Text>Error: {error.message}</Text>;
 
-  const restaurant = data.getMenuByRestaurantName;
+  const restaurant = realtimeData?.restaurantUpdated || data.getMenuByRestaurantName;
   const menu = restaurant.menu.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -83,6 +121,10 @@ export default function RestaurantScreen() {
             restaurant={restaurant}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
+            updateSuggestions={updateSuggestions}
+            suggestions={suggestions}
+            showSuggestions={showSuggestions}
+            setShowSuggestions={setShowSuggestions}
           />
         }
         data={menu}
@@ -119,8 +161,16 @@ export default function RestaurantScreen() {
   );
 }
 
-const RestaurantHeader = ({ restaurant, searchQuery, setSearchQuery }) => (
-  <View className="mb-6 shadow-xl bg-orange-500 rounded-b-[40px]">
+const RestaurantHeader = ({
+  restaurant,
+  searchQuery,
+  setSearchQuery,
+  updateSuggestions,
+  suggestions,
+  showSuggestions,
+  setShowSuggestions
+}) => (
+  <View className="mb-6 shadow-xl bg-orange-500 rounded-b-[40px] z-50">
     <LinearGradient
       colors={['#F97316', '#EA580C']} // Orange-500 to Orange-600
       className="pt-14 pb-8 px-6 rounded-b-[40px]"
@@ -157,20 +207,49 @@ const RestaurantHeader = ({ restaurant, searchQuery, setSearchQuery }) => (
         <View className="w-10" />
       </View>
 
-      {/* Search Bar */}
-      <View className="bg-white rounded-2xl px-4 py-3.5 flex-row items-center shadow-lg shadow-orange-900/20 border-2 border-orange-100">
-        <Ionicons name="search" size={22} color="#F97316" />
-        <TextInput
-          placeholder="Search for dishes..."
-          placeholderTextColor="#9CA3AF"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          className="flex-1 ml-3 text-gray-800 font-outfit-medium text-base"
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery("")}>
-            <Ionicons name="close-circle" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
+      {/* Search Bar with Suggestions */}
+      <View className="relative">
+        <View className="bg-white rounded-2xl px-4 py-3.5 flex-row items-center shadow-lg shadow-orange-900/20 border-2 border-orange-100">
+          <Ionicons name="search" size={22} color="#F97316" />
+          <TextInput
+            placeholder="Search for dishes..."
+            placeholderTextColor="#9CA3AF"
+            value={searchQuery}
+            onChangeText={updateSuggestions}
+            onFocus={() => searchQuery.length > 1 && setShowSuggestions(true)}
+            className="flex-1 ml-3 text-gray-800 font-outfit-medium text-base"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => {
+              setSearchQuery("");
+              updateSuggestions("");
+            }}>
+              <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Suggestions List */}
+        {showSuggestions && suggestions.length > 0 && (
+          <View className="absolute top-[65px] left-0 right-0 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+            {suggestions.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => {
+                  setSearchQuery(item.name);
+                  setShowSuggestions(false);
+                }}
+                className={`flex-row items-center p-4 border-b border-gray-50 ${index === suggestions.length - 1 ? 'border-b-0' : ''}`}
+              >
+                <Ionicons name="fast-food-outline" size={18} color="#F97316" />
+                <View className="ml-3 flex-1">
+                  <Text className="text-gray-800 font-outfit-bold text-sm">{item.name}</Text>
+                  <Text className="text-gray-400 font-outfit-medium text-[10px]">{item.category} • ₹{item.price}</Text>
+                </View>
+                <Ionicons name="arrow-forward" size={14} color="#E5E7EB" />
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
       </View>
     </LinearGradient>
