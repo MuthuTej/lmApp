@@ -5,7 +5,7 @@ import Toast from 'react-native-toast-message';
 import client from '../apolloClient';
 import { ApolloProvider, useMutation, gql } from '@apollo/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSegments } from 'expo-router';
+import { useSegments, useRouter } from 'expo-router';
 import "./globals.css";
 import { LogBox, Platform } from 'react-native';
 
@@ -156,9 +156,38 @@ function RootLayoutNav() {
   };
 
   const segments = useSegments();
+  const router = useRouter();
 
   useEffect(() => {
-    // Sync whenever segments change (e.g., navigating to /home after login)
+    const checkAuth = async () => {
+      try {
+        const userId = await AsyncStorage.getItem('userId');
+
+        // Debugging logs to verify behavior
+        console.log('Auth Check - Segments:', segments);
+        console.log('Auth Check - User ID:', userId);
+
+        // Check if we are inside the (auth) group
+        const inAuthGroup = segments.includes('(auth)');
+
+        // Define public routes
+        const publicRoutes = ['index', 'forgot-password', 'reset-password'];
+        const firstSegment = segments[0] || 'index';
+        const isPublic = publicRoutes.includes(firstSegment);
+
+        // If user is NOT signed in, not in auth group, and not on a public page
+        if (!userId && !inAuthGroup && !isPublic) {
+          console.log('⛔ Redirecting unauthenticated user to Sign In');
+          router.replace('/(auth)/sign-in');
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+      }
+    };
+
+    checkAuth();
+
+    // Sync push token whenever segments change (e.g., navigating to /home after login)
     syncPushToken();
   }, [segments]);
 
