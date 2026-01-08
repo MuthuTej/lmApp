@@ -199,29 +199,39 @@ const Home = () => {
       const filtered = [];
       const seenItems = new Set();
 
+      setSuggestions([]); // Clear previous suggestions
+
       allRestaurantMenus.forEach(res => {
-        res.menu.forEach(item => {
-          const itemName = item.name.toLowerCase();
-          const category = item.category.toLowerCase();
-          const searchText = text.toLowerCase();
+        // Safe check for menu existence and it being an array
+        if (res?.menu && Array.isArray(res.menu)) {
+          res.menu.forEach(item => {
+            if (!item?.name) return;
 
-          if ((itemName.includes(searchText) || category.includes(searchText)) && !seenItems.has(item.name)) {
-            filtered.push({
-              name: item.name,
-              type: 'dish',
-              category: item.category
-            });
-            seenItems.add(item.name);
-          }
-        });
+            const itemName = item.name.toLowerCase();
+            // Safe check for category
+            const category = (item.category || '').toLowerCase();
+            const searchText = text.toLowerCase();
 
-        if (res.name.toLowerCase().includes(text.toLowerCase()) && !seenItems.has(res.name)) {
+            if ((itemName.includes(searchText) || category.includes(searchText)) && !seenItems.has(item.name)) {
+              filtered.push({
+                name: item.name,
+                type: 'dish',
+                category: item.category || ''
+              });
+              seenItems.add(item.name);
+            }
+          });
+        }
+
+        // Safe check for restaurant name
+        const resName = res?.name;
+        if (resName && resName.toLowerCase().includes(text.toLowerCase()) && !seenItems.has(resName)) {
           filtered.push({
-            name: (data?.getRestaurents?.find(r => r.name === res.name)?.displayName || res.name),
-            originalName: res.name,
+            name: (data?.getRestaurents?.find(r => r.name === resName)?.displayName || resName),
+            originalName: resName,
             type: 'restaurant'
           });
-          seenItems.add(res.name);
+          seenItems.add(resName);
         }
       });
 
