@@ -3,7 +3,7 @@
 import { Stack } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import client from '../apolloClient';
-import { ApolloProvider, useMutation, gql } from '@apollo/client';
+import { ApolloProvider, useMutation, useLazyQuery, gql } from '@apollo/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSegments, useRouter } from 'expo-router';
 import "./globals.css";
@@ -158,6 +158,20 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
 
+  /* -------------------- USER VALIDATION -------------------- */
+  const CHECK_USER_VALIDITY = gql`
+    query CheckUserValidity {
+      me {
+        id
+      }
+    }
+  `;
+
+  // We use useLazyQuery so we can trigger it conditionally
+  const [checkUserValidity] = useLazyQuery(CHECK_USER_VALIDITY, {
+    fetchPolicy: 'network-only', // Ensure we check the server, not cache
+  });
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -175,11 +189,38 @@ function RootLayoutNav() {
         const firstSegment = segments[0] || 'index';
         const isPublic = publicRoutes.includes(firstSegment);
 
+        // 1. Basic Existence Check
         // If user is NOT signed in, not in auth group, and not on a public page
         if (!userId && !inAuthGroup && !isPublic) {
           console.log('⛔ Redirecting unauthenticated user to Sign In');
           router.replace('/(auth)/sign-in');
+          return;
         }
+
+        // 2. ID Validity Check (Only run if we have an ID and are not on public/auth pages)
+        if (userId && !inAuthGroup && !isPublic) {
+          try {
+            // Verify this ID is actually valid on the backend
+            const result = await checkUserValidity();
+
+            if (result.error || !result.data?.me) {
+              console.log('❌ Invalid User ID detected on backend. Logging out...');
+              await AsyncStorage.clear(); // Wipe the bad data
+              router.replace('/(auth)/sign-in'); // Send to login
+            } else {
+              console.log('✅ User verified with backend');
+            }
+          } catch (validityError) {
+            console.log('⚠️ Could not verify user with backend (network error?):', validityError.message);
+            // Optional: Decide if network error should prevent access. 
+            // Usually, we let them stay logged in ("Offline Mode") unless it's a 401.
+            if (validityError.message.includes('Unauthenticated') || validityError.message.includes('jwt')) {
+              await AsyncStorage.clear();
+              router.replace('/(auth)/sign-in');
+            }
+          }
+        }
+
       } catch (error) {
         console.error('Auth check error:', error);
       }
