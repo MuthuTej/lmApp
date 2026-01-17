@@ -5,11 +5,11 @@
     "scheme": "GrabIt",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/applogo.png",
+    "icon": "./assets/logo_name.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/applogo.png",
+      "image": "./assets/logo_name.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -19,7 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/logo_name.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
