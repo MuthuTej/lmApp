@@ -17,6 +17,7 @@ import { gql, useQuery, useSubscription } from "@apollo/client";
 import { Ionicons } from "@expo/vector-icons";
 import Loader from "../../components/Loader";
 import DishModal from "../../components/DishModal";
+import VegIndicator from "../../components/VegIndicator";
 import { Link } from "expo-router";
 
 const screenWidth = Dimensions.get("window").width;
@@ -55,6 +56,7 @@ const GET_MENU_BY_RESTAURANT_NAME = gql`
         imageUrl
         isAvailable
         price
+        isVeg
       }
       isOpen
       logo

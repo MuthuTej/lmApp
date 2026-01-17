@@ -32,6 +32,7 @@ const GET_MENU_BY_RESTAURANT_NAME = gql`
         imageUrl
         isAvailable
         price
+        isVeg
       }
       isOpen
       logo
@@ -52,6 +53,7 @@ const RESTAURANT_UPDATED_SUB = gql`
         category
         description
         imageUrl
+        isVeg
       }
     }
   }

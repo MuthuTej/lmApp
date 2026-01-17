@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native"
 import { Link } from "expo-router"
+import VegIndicator from "./VegIndicator"
 
 export default function DishCard({ item, index = 0, cardWidth = 160, href, showRank, onPress }) {
   const title = item.name ?? item.dishName;
@@ -7,6 +8,7 @@ export default function DishCard({ item, index = 0, cardWidth = 160, href, showR
   const description = item.description ?? "";
   const price = item.price ?? "—";
   const isAvailable = item.isAvailable ?? true;
+  const isVeg = item.isVeg;
 
   const CardInner = (
     <TouchableOpacity
@@ -40,14 +42,17 @@ export default function DishCard({ item, index = 0, cardWidth = 160, href, showR
 
       {/* CONTENT */}
       <View className="p-3">
-        <View className="h-10 justify-center">
-          <Text className="text-sm font-outfit-bold text-gray-800 leading-4" numberOfLines={2}>
-            {title}
-          </Text>
+        <View className="flex-row justify-between items-start gap-2 mb-2">
+          <View className="flex-1">
+            <Text className="text-sm font-outfit-bold text-gray-800 leading-4" numberOfLines={2}>
+              {title}
+            </Text>
+          </View>
+          {isVeg !== undefined && isVeg !== null && <VegIndicator isVeg={isVeg} size="xs" />}
         </View>
 
         {!!description && (
-          <Text className="text-[10px] text-gray-500 mt-1 mb-2 leading-3" numberOfLines={1}>
+          <Text className="text-[10px] text-gray-500 mb-2 leading-3" numberOfLines={1}>
             {description}
           </Text>
         )}

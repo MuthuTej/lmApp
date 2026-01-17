@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { gql, useMutation, useQuery } from '@apollo/client';
+import VegIndicator from './VegIndicator';
 
 // ... Queries (keeping them same)
 const ME = gql`
@@ -144,11 +145,14 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
               {/* Dish Details */}
               <View className="mb-4">
                 <View className="flex-row justify-between items-start mb-2">
-                  <Text className="text-2xl font-outfit-bold text-gray-900 flex-1 mr-4">{dish.name}</Text>
+                  <View className="flex-1">
+                    <Text className="text-2xl font-outfit-bold text-gray-900 mb-2">{dish.name}</Text>
+                    {dish.isVeg !== undefined && dish.isVeg !== null && <VegIndicator isVeg={dish.isVeg} size="sm" />}
+                  </View>
                   <Text className="text-2xl font-outfit-extrabold text-orange-600">₹{dish.price}</Text>
                 </View>
 
-                <Text className="text-gray-500 text-sm leading-5 mb-4 font-outfit-medium">{dish.description}</Text>
+                <Text className="text-gray-500 text-sm leading-5 mb-4 mt-3 font-outfit-medium">{dish.description}</Text>
 
                 {/* Divider */}
                 <View className="h-[1px] bg-gray-100 my-2" />

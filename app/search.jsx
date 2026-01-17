@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { gql, useQuery, useApolloClient } from "@apollo/client";
 import { Ionicons } from "@expo/vector-icons";
 import Loader from "../components/Loader";
+import VegIndicator from "../components/VegIndicator";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -40,6 +41,7 @@ const GET_MENU_BY_RESTAURANT_NAME = gql`
         imageUrl
         isAvailable
         price
+        isVeg
       }
       isOpen
       logo
@@ -201,9 +203,12 @@ const SearchResults = () => {
                                 {/* Details */}
                                 <View className="flex-1 ml-4 py-1 justify-between h-24">
                                     <View>
-                                        <Text className="text-lg font-outfit-extrabold text-gray-900 leading-tight" numberOfLines={1}>
-                                            {item.name}
-                                        </Text>
+                                        <View className="flex-row items-center justify-between mb-1">
+                                            <Text className="text-lg font-outfit-extrabold text-gray-900 leading-tight flex-1" numberOfLines={1}>
+                                                {item.name}
+                                            </Text>
+                                            {item.isVeg !== undefined && item.isVeg !== null && <View className="ml-2"><VegIndicator isVeg={item.isVeg} size="xs" /></View>}
+                                        </View>
                                         <View className="flex-row items-center mt-1">
                                             <Text className="text-gray-400 font-outfit-medium text-xs truncate">
                                                 by {item.restaurantDisplayName}
