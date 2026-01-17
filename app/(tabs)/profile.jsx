@@ -160,7 +160,7 @@ export default function Profile() {
           <View className="relative shadow-2xl shadow-black/30">
             <View className="bg-white p-1.5 rounded-full">
               <Image
-                source={require("../../assets/profile.jpeg")}
+                source={require("../../assets/profile.png")}
                 className="w-32 h-32 rounded-full bg-gray-200"
                 resizeMode="cover"
               />
