@@ -14,8 +14,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ---------------- HTTP ----------------
 const httpLink = new HttpLink({
-  // uri: 'https://lm-backend-zrtl.onrender.com/graphql',
-  uri: 'http://192.168.1.8:4000/graphql',
+  uri: 'https://lm-backend-zrtl.onrender.com/graphql',
+  // uri: 'http://192.168.1.8:4000/graphql',
 });
 
 // ---------------- Auth ----------------
@@ -32,8 +32,8 @@ const authLink = setContext(async (_, { headers }) => {
 // ---------------- WebSocket ----------------
 const wsLink = new GraphQLWsLink(
   createClient({
-    // url: 'wss://lm-backend-zrtl.onrender.com/graphql',
-    url: 'ws://192.168.1.8:4000/graphql',
+    url: 'wss://lm-backend-zrtl.onrender.com/graphql',
+    // url: 'ws://192.168.1.8:4000/graphql',
     connectionParams: async () => {
       const token = await AsyncStorage.getItem('token');
       return {
