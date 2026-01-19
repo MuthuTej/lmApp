@@ -1,5 +1,5 @@
 // CartScreen.jsx
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,11 +11,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { gql, useQuery, useMutation, useApolloClient } from "@apollo/client";
-import { WebView } from "react-native-webview";
-import { useRouter } from "expo-router";
-
-import { useEffect, useRef } from "react";
+import { gql, useQuery, useMutation } from "@apollo/client";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 
 // ------------------ GraphQL ------------------
 
@@ -74,28 +72,10 @@ const CHECKOUT_CART = gql`
       internalOrderId
       restaurantId
       total
+      cashfreeOrderId
     }
   }
 `;
-
-const CREATE_CASHFREE_ORDER = gql`
-  mutation CreateCashfreeOrder(
-    $restaurantId: String!
-    $internalOrderId: String!
-    $total: Float!
-  ) {
-    createCashfreeOrder(
-      restaurantId: $restaurantId
-      internalOrderId: $internalOrderId
-      total: $total
-    ) {
-      paymentSessionId
-      success
-    }
-  }
-`;
-
-
 
 const ME = gql`
   query GetMe {
@@ -113,16 +93,14 @@ const ME = gql`
 
 export default function CartScreen() {
   const router = useRouter();
-  const client = useApolloClient();
+  const params = useLocalSearchParams();
+
   const { data: meData, loading: meLoading } = useQuery(ME);
   const userId = meData?.me?.id || null;
   const userName = meData?.me?.name || null;
 
   const [loadingItemId, setLoadingItemId] = useState(null);
-  const [paymentUrl, setPaymentUrl] = useState(null);
-  const [showWebView, setShowWebView] = useState(false);
-
-
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const { data, loading, refetch } = useQuery(GET_CART, {
     variables: { userId },
@@ -137,9 +115,10 @@ export default function CartScreen() {
     },
     onError: (err) => {
       setLoadingItemId(null);
-
       const errorMessage = err.message || "";
+
       console.log("error", err.message);
+
       if (errorMessage.includes("not available")) {
         alert("This item is currently unavailable.");
       } else if (errorMessage.includes("not found")) {
@@ -157,19 +136,24 @@ export default function CartScreen() {
   const [checkoutCart, { loading: checkoutLoading }] =
     useMutation(CHECKOUT_CART);
 
-  const [createCashfreeOrder] =
-    useMutation(CREATE_CASHFREE_ORDER);
+  // ✅ REFRESH CART AFTER PAYMENT SUCCESS (when coming back)
+  React.useEffect(() => {
+    if (params?.paymentSuccess === "true") {
+      console.log("🔄 Payment success detected, refetching cart...");
+      refetch().then(() => {
+        console.log("✅ Cart refetched successfully");
+      });
 
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
-
+      // ✅ remove param to prevent repeated refetch
+      router.setParams({ paymentSuccess: "false" });
+    }
+  }, [params?.paymentSuccess, refetch]);
 
   // ------------------ Handlers ------------------
 
-
-
   const handleQuantityChange = (item, change) => {
     setLoadingItemId(item.dishId);
+
     addToCart({
       variables: {
         userId,
@@ -195,37 +179,47 @@ export default function CartScreen() {
     setIsProcessingPayment(true);
 
     try {
-      // ✅ Existing checkout logic
       const checkoutRes = await checkoutCart({
         variables: { userId },
       });
 
-      const {
-        internalOrderId,
-        restaurantId,
-        total,
-      } = checkoutRes.data.checkoutCart;
+      const response = checkoutRes?.data?.checkoutCart;
 
-      // ✅ Create Cashfree order
-      const cfRes = await createCashfreeOrder({
-        variables: {
-          restaurantId,
+      if (!response?.success) {
+        alert("Checkout failed");
+        return;
+      }
+
+      const { internalOrderId, restaurantId, total, cashfreeOrderId } = response;
+
+      const razorpayOrderId = cashfreeOrderId;
+
+      if (!razorpayOrderId) {
+        alert("Razorpay order id missing from backend");
+        return;
+      }
+
+      const amountInPaise = Math.round(total * 100).toString();
+
+      router.push({
+        pathname: "/razorpay-webview",
+        params: {
+          order_id: razorpayOrderId,
+          amount: amountInPaise,
+          key_id: "rzp_test_S5k3kvgmXRiymn",
+          name: "Grabbit",
+          description: `Order ${internalOrderId}`,
+          prefill_name: userName || "Customer",
+          prefill_email: meData?.me?.email || "test@example.com",
+          prefill_contact: meData?.me?.mobileNumber || "9999999999",
+
+          // ✅ extra (optional)
           internalOrderId,
-          total,
+          restaurantId,
         },
       });
-
-      const paymentSessionId =
-        cfRes.data.createCashfreeOrder.paymentSessionId;
-
-      // ✅ Open Cashfree Web Checkout
-      const url = `https://sandbox.cashfree.com/pg/view/sessions/checkout/web/${paymentSessionId}`;
-
-      setPaymentUrl(url);
-      setShowWebView(true);
-
     } catch (err) {
-      console.error(err);
+      console.error("❌ Payment start error:", err);
       alert("Payment failed to start");
     } finally {
       setIsProcessingPayment(false);
@@ -255,21 +249,25 @@ export default function CartScreen() {
       {/* Header */}
       <View className="bg-orange-500 pt-14 pb-8 px-6 rounded-b-[40px] shadow-xl mb-6 z-10">
         <View className="flex-row justify-between items-center mb-2">
-          <Text className="text-4xl font-outfit-extrabold text-white tracking-tight">My Cart</Text>
+          <Text className="text-4xl font-outfit-extrabold text-white tracking-tight">
+            My Cart
+          </Text>
+
           <TouchableOpacity
             onPress={handleClearAll}
             activeOpacity={0.7}
             className="flex-row bg-white/20 px-3 py-2 rounded-full items-center border border-white/30"
           >
             <Ionicons name="trash-outline" size={16} color="white" />
-            <Text className="text-white font-outfit-bold text-xs uppercase tracking-wide ml-2">Clear</Text>
+            <Text className="text-white font-outfit-bold text-xs uppercase tracking-wide ml-2">
+              Clear
+            </Text>
           </TouchableOpacity>
         </View>
+
         <Text className="text-orange-50 text-sm font-outfit-medium tracking-wide opacity-90 pl-1 mb-4">
           {data?.getCart?.items?.length || 0} items waiting for you
         </Text>
-
-
       </View>
 
       {/* Cart Items */}
@@ -288,7 +286,10 @@ export default function CartScreen() {
 
             <View className="flex-1 ml-4 justify-between h-20 py-1">
               <View>
-                <Text className="text-base font-outfit-bold text-gray-800 leading-tight" numberOfLines={2}>
+                <Text
+                  className="text-base font-outfit-bold text-gray-800 leading-tight"
+                  numberOfLines={2}
+                >
                   {item.dishName}
                 </Text>
                 <Text className="text-sm font-outfit-extrabold text-orange-600 mt-1">
@@ -307,7 +308,9 @@ export default function CartScreen() {
                 disabled={loadingItemId === item.dishId}
                 className="bg-orange-500 w-7 h-7 rounded-full justify-center items-center shadow-sm"
               >
-                <Text className="text-lg font-outfit-bold text-white leading-5">+</Text>
+                <Text className="text-lg font-outfit-bold text-white leading-5">
+                  +
+                </Text>
               </TouchableOpacity>
 
               {loadingItemId === item.dishId ? (
@@ -323,7 +326,9 @@ export default function CartScreen() {
                 disabled={loadingItemId === item.dishId}
                 className="bg-gray-50 w-7 h-7 rounded-full justify-center items-center border border-gray-200"
               >
-                <Text className="text-lg font-outfit-bold text-gray-600 leading-5">-</Text>
+                <Text className="text-lg font-outfit-bold text-gray-600 leading-5">
+                  -
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -335,9 +340,15 @@ export default function CartScreen() {
         <View className="absolute bottom-0 left-0 right-0 p-5 bg-white rounded-t-[32px] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] border-t border-gray-100">
           <View className="flex-row items-center justify-between">
             <View className="pl-2">
-              <Text className="text-gray-400 font-outfit-medium text-sm">Total Bill</Text>
+              <Text className="text-gray-400 font-outfit-medium text-sm">
+                Total Bill
+              </Text>
               <Text className="text-3xl font-outfit-extrabold text-gray-900">
-                ₹{data.getCart.items.reduce((acc, item) => acc + (item.price * item.quantity), 0)}
+                ₹
+                {data.getCart.items.reduce(
+                  (acc, item) => acc + item.price * item.quantity,
+                  0
+                )}
               </Text>
             </View>
 
@@ -362,28 +373,6 @@ export default function CartScreen() {
         </View>
       )}
 
-
-      {/* Cashfree WebView */}
-      <Modal visible={showWebView} animationType="slide">
-        <SafeAreaView className="flex-1 bg-white">
-          <TouchableOpacity
-            onPress={() => {
-              setShowWebView(false)
-              refetch()
-            }}
-            className="p-4 bg-red-500"
-          >
-            <Text className="text-white text-center font-semibold">
-              Close Payment
-            </Text>
-          </TouchableOpacity>
-
-          {paymentUrl && (
-            <WebView source={{ uri: paymentUrl }} startInLoadingState />
-          )}
-        </SafeAreaView>
-      </Modal>
-
       {/* Payment Processing Loading Modal */}
       <Modal visible={isProcessingPayment} transparent={true} animationType="fade">
         <View className="flex-1 justify-center items-center bg-black/50">
@@ -395,6 +384,6 @@ export default function CartScreen() {
           </View>
         </View>
       </Modal>
-    </View >
+    </View>
   );
 }
