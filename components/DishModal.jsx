@@ -126,6 +126,8 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
 
   if (!visible || !dish) return null;
 
+  const isClosed = restaurant?.isOpen === false;
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -138,8 +140,11 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
               </View>
 
               {/* Dish Image */}
-              <View className="shadow-xl shadow-orange-500/20 rounded-[24px] bg-white mb-6 border-[4px] border-orange-500 overflow-hidden">
+              <View className="shadow-xl shadow-orange-500/20 rounded-[24px] bg-white mb-6 border-[4px] border-orange-500 overflow-hidden relative">
                 <Image source={{ uri: dish.imageUrl }} className="w-full h-64 bg-gray-100" resizeMode="cover" />
+                {isClosed && (
+                  <View className="absolute inset-0" style={{ backgroundColor: 'rgba(100,100,100,0.8)' }} />
+                )}
               </View>
 
               {/* Dish Details */}
@@ -161,9 +166,10 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
               {/* Footer Actions */}
               <View className="pt-2">
                 {/* Quantity Selector */}
-                <View className="flex-row items-center justify-center mb-8 bg-orange-50 self-center rounded-full p-1.5 border border-orange-100 shadow-sm">
+                <View className={`flex-row items-center justify-center mb-8 bg-orange-50 self-center rounded-full p-1.5 border border-orange-100 shadow-sm ${isClosed ? 'opacity-50' : ''}`}>
                   <TouchableOpacity
-                    onPress={() => setQty(Math.max(1, qty - 1))}
+                    onPress={() => !isClosed && setQty(Math.max(1, qty - 1))}
+                    disabled={isClosed}
                     className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm border border-orange-50"
                   >
                     <Ionicons name="remove" size={24} color="#EA580C" />
@@ -172,7 +178,8 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
                   <Text className="text-2xl font-outfit-bold text-gray-800 w-16 text-center">{qty}</Text>
 
                   <TouchableOpacity
-                    onPress={() => setQty(qty + 1)}
+                    onPress={() => !isClosed && setQty(qty + 1)}
+                    disabled={isClosed}
                     className="w-12 h-12 bg-orange-500 rounded-full items-center justify-center shadow-lg shadow-orange-200"
                   >
                     <Ionicons name="add" size={24} color="white" />
@@ -190,11 +197,11 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
 
                   <TouchableOpacity
                     onPress={handleAddToCart}
-                    disabled={loading || meLoading}
-                    className="flex-[2] bg-orange-500 rounded-2xl py-4 items-center justify-center shadow-lg shadow-orange-200 border-2 border-orange-400"
+                    disabled={loading || meLoading || isClosed}
+                    className={`flex-[2] rounded-2xl py-4 items-center justify-center shadow-lg border-2 ${isClosed ? 'bg-gray-400 border-gray-400 shadow-none' : 'bg-orange-500 border-orange-400 shadow-orange-200'}`}
                   >
                     <Text className="text-white font-outfit-bold text-lg tracking-wide">
-                      {loading ? 'Adding...' : `Add to Cart - ₹${dish.price * qty}`}
+                      {isClosed ? 'Restaurant Closed' : (loading ? 'Adding...' : `Add to Cart - ₹${dish.price * qty}`)}
                     </Text>
                   </TouchableOpacity>
                 </View>

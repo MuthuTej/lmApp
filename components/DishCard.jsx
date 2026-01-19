@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native"
 import { Link } from "expo-router"
 import VegIndicator from "./VegIndicator"
 
-export default function DishCard({ item, index = 0, cardWidth = 160, href, showRank, onPress }) {
+export default function DishCard({ item, index = 0, cardWidth = 160, href, showRank, onPress, isRestaurantOpen = true }) {
   const title = item.name ?? item.dishName;
   const imgSrc = item.imageUrl ?? item.image;
   const description = item.description ?? "";
@@ -24,6 +24,11 @@ export default function DishCard({ item, index = 0, cardWidth = 160, href, showR
           className="w-full h-36 bg-gray-200"
           resizeMode="cover"
         />
+        {/* Closed Overlay (B&W effect simulation) */}
+        {!isRestaurantOpen && (
+          <View className="absolute inset-0 bg-gray-500/60 mix-blend-saturation" style={{ backgroundColor: 'rgba(100,100,100,0.8)' }} />
+        )}
+
         {!isAvailable && (
           <View className="absolute inset-0 bg-black/40 items-center justify-center">
             <View className="bg-red-500 px-2 py-1 rounded-md transform -rotate-12">

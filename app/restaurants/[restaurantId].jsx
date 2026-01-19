@@ -157,6 +157,7 @@ export default function RestaurantScreen() {
             cardWidth={screenWidth / 2.22}
             showRank={false}
             onPress={() => setSelectedDish(item)}
+            isRestaurantOpen={restaurant.isOpen !== false} // Default to true if undefined
           />
         )}
         columnWrapperStyle={{
