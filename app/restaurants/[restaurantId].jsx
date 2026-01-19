@@ -65,6 +65,7 @@ export default function RestaurantScreen() {
   const [searchQuery, setSearchQuery] = useState(dishName || "");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filterType, setFilterType] = useState('all'); // 'all', 'veg', 'non-veg'
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -109,25 +110,40 @@ export default function RestaurantScreen() {
   if (error) return <Text>Error: {error.message}</Text>;
 
   const restaurant = realtimeData?.restaurantUpdated || data.getMenuByRestaurantName;
-  const menu = restaurant.menu.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+
+  const menu = restaurant.menu.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+
+    let matchesFilter = true;
+    const isVeg = item.isVeg === true || item.isVeg === "true";
+
+    if (filterType === 'veg') {
+      matchesFilter = isVeg;
+    } else if (filterType === 'non-veg') {
+      matchesFilter = !isVeg;
+    }
+
+    return matchesSearch && matchesFilter;
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={['left', 'right', 'bottom']}>
       <Animated.FlatList
         style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
         ListHeaderComponent={
-          <RestaurantHeader
-            restaurant={restaurant}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            updateSuggestions={updateSuggestions}
-            suggestions={suggestions}
-            showSuggestions={showSuggestions}
-            setShowSuggestions={setShowSuggestions}
-          />
+          <View>
+            <RestaurantHeader
+              restaurant={restaurant}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              updateSuggestions={updateSuggestions}
+              suggestions={suggestions}
+              showSuggestions={showSuggestions}
+              setShowSuggestions={setShowSuggestions}
+            />
+            <FilterRow filterType={filterType} setFilterType={setFilterType} />
+          </View>
         }
         data={menu}
         keyExtractor={(item, index) => `${index}-${item.name}`}
@@ -141,6 +157,7 @@ export default function RestaurantScreen() {
             cardWidth={screenWidth / 2.22}
             showRank={false}
             onPress={() => setSelectedDish(item)}
+            isRestaurantOpen={restaurant.isOpen !== false} // Default to true if undefined
           />
         )}
         columnWrapperStyle={{
@@ -163,6 +180,67 @@ export default function RestaurantScreen() {
   );
 }
 
+const FilterRow = ({ filterType, setFilterType }) => {
+  return (
+    <View className="flex-row px-6 pb-4 gap-3">
+      <FilterChip
+        label="Veg"
+        type="veg"
+        isActive={filterType === 'veg'}
+        onToggle={() => setFilterType(filterType === 'veg' ? 'all' : 'veg')}
+      />
+      <FilterChip
+        label="Non-veg"
+        type="non-veg"
+        isActive={filterType === 'non-veg'}
+        onToggle={() => setFilterType(filterType === 'non-veg' ? 'all' : 'non-veg')}
+      />
+    </View>
+  );
+};
+
+const FilterChip = ({ label, type, isActive, onToggle }) => {
+  const isVeg = type === 'veg';
+  const borderColor = isActive ? "border-red-200" : "border-gray-200";
+  const bgColor = isActive ? "bg-red-50" : "bg-white";
+  const textColor = "text-gray-800";
+
+  return (
+    <TouchableOpacity
+      onPress={onToggle}
+      activeOpacity={0.7}
+      className={`flex-row items-center px-3 py-2 rounded-xl border ${borderColor} ${bgColor} shadow-sm`}
+    >
+      {/* Icon */}
+      <View className={`mr-2 border ${isVeg ? 'border-green-600' : 'border-red-700'} w-4 h-4 items-center justify-center rounded-[4px]`}>
+        {isVeg ? (
+          <View className="w-2 h-2 rounded-full bg-green-600" />
+        ) : (
+          <View style={{
+            width: 0,
+            height: 0,
+            backgroundColor: 'transparent',
+            borderStyle: 'solid',
+            borderLeftWidth: 3,
+            borderRightWidth: 3,
+            borderBottomWidth: 6,
+            borderLeftColor: 'transparent',
+            borderRightColor: 'transparent',
+            borderBottomColor: '#b91c1c',
+            transform: [{ translateY: -0.5 }]
+          }} />
+        )}
+      </View>
+
+      <Text className={`font-outfit-medium text-sm ${textColor} mr-1`}>{label}</Text>
+
+      {isActive && (
+        <Ionicons name="close" size={14} color="#4B5563" style={{ marginLeft: 2 }} />
+      )}
+    </TouchableOpacity>
+  );
+};
+
 const RestaurantHeader = ({
   restaurant,
   searchQuery,
@@ -172,7 +250,7 @@ const RestaurantHeader = ({
   showSuggestions,
   setShowSuggestions
 }) => (
-  <View className="mb-6 shadow-xl bg-orange-500 rounded-b-[40px] z-50">
+  <View className="mb-4 shadow-xl bg-orange-500 rounded-b-[40px] z-50">
     <LinearGradient
       colors={['#F97316', '#EA580C']} // Orange-500 to Orange-600
       className="pt-14 pb-8 px-6 rounded-b-[40px]"
@@ -210,7 +288,7 @@ const RestaurantHeader = ({
       </View>
 
       {/* Search Bar with Suggestions */}
-      <View className="relative">
+      <View className="relative z-50">
         <View className="bg-white rounded-2xl px-4 py-3.5 flex-row items-center shadow-lg shadow-orange-900/20 border-2 border-orange-100">
           <Ionicons name="search" size={22} color="#F97316" />
           <TextInput
