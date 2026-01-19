@@ -16,14 +16,14 @@ export default function VegIndicator({ isVeg, size = "sm" }) {
 
   if (isVegStatus) {
     return (
-      <View className={`flex-row items-center ${config.container} rounded-lg bg-green-50 border border-green-200`}>
+      <View className={`self-start flex-row items-center ${config.container} rounded-lg bg-green-50 border border-green-200`}>
         <View className="w-1.5 h-1.5 bg-green-600 rounded-full mr-1" />
         <Text className={`${config.text} font-outfit-bold text-green-700`}>VEG</Text>
       </View>
     );
   } else {
     return (
-      <View className={`flex-row items-center ${config.container} rounded-lg bg-red-50 border border-red-200`}>
+      <View className={`self-start flex-row items-center ${config.container} rounded-lg bg-red-50 border border-red-200`}>
         <View className="w-1.5 h-1.5 bg-red-600 rounded-full mr-1" />
         <Text className={`${config.text} font-outfit-bold text-red-700`}>NON-VEG</Text>
       </View>
