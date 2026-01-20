@@ -87,13 +87,18 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
 
   if (!dish) return null;
 
+  const submittingRef = React.useRef(false);
+
   const handleAddToCart = async () => {
+    if (submittingRef.current) return;
+
     if (!userId || !restaurant?.name || !dish?.name) {
       alert("Missing user, restaurant, or dish ID");
       return;
     }
 
     try {
+      submittingRef.current = true;
       await addToCartMutation({
         variables: {
           userId,
@@ -121,6 +126,8 @@ export default function DishModal({ visible, dish, onClose, restaurant }) {
       } else {
         alert(message);
       }
+    } finally {
+      submittingRef.current = false;
     }
   };
 
