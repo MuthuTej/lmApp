@@ -33,7 +33,7 @@ const authLink = setContext(async (_, { headers }) => {
 const wsLink = new GraphQLWsLink(
   createClient({
     url: 'wss://lm-backend-zrtl.onrender.com/graphql',
-    //url: 'ws://192.168.1.2:4000/graphql',
+    // url: 'ws://192.168.1.2:4000/graphql',
     connectionParams: async () => {
       const token = await AsyncStorage.getItem('token');
       return {
