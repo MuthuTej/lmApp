@@ -294,8 +294,8 @@ const Home = () => {
               <Text className="text-5xl font-outfit-extrabold text-white tracking-tighter">Grab</Text>
               <Text className="text-5xl font-outfit-extrabold text-yellow-300 tracking-tighter italic">IT</Text>
             </View>
-            <Text className="text-orange-100 text-base mt-2 font-outfit-medium tracking-wide"> - Skip the line . Gab & Go - </Text>
-        </View>
+            <Text className="text-orange-100 text-base mt-2 font-outfit-medium tracking-wide"> - Skip the line . Grab & Go - </Text>
+          </View>
           <TouchableOpacity
             className="bg-white/20 p-3 rounded-full border border-white/30"
             activeOpacity={0.7}
