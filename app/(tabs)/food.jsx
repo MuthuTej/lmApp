@@ -1,5 +1,4 @@
-// CartScreen.jsx
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,9 +10,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { gql, useQuery, useMutation } from "@apollo/client";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { gql, useQuery, useMutation, useApolloClient } from "@apollo/client";
+import { useRouter } from "expo-router";
+
+import RazorpayCheckout from "react-native-razorpay";
 
 // ------------------ GraphQL ------------------
 
@@ -65,6 +65,7 @@ const CLEAR_CART = gql`
   }
 `;
 
+// ✅ Updated: checkoutCart should now return cashfreeOrderId (razorpay order_id)
 const CHECKOUT_CART = gql`
   mutation CheckoutCart($userId: String!) {
     checkoutCart(userId: $userId) {
@@ -93,7 +94,8 @@ const ME = gql`
 
 export default function CartScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const client = useApolloClient();
+
 
   const { data: meData, loading: meLoading } = useQuery(ME);
   const userId = meData?.me?.id || null;
@@ -115,8 +117,8 @@ export default function CartScreen() {
     },
     onError: (err) => {
       setLoadingItemId(null);
-      const errorMessage = err.message || "";
 
+      const errorMessage = err.message || "";
       console.log("error", err.message);
 
       if (errorMessage.includes("not available")) {
@@ -135,19 +137,6 @@ export default function CartScreen() {
 
   const [checkoutCart, { loading: checkoutLoading }] =
     useMutation(CHECKOUT_CART);
-
-  // ✅ REFRESH CART AFTER PAYMENT SUCCESS (when coming back)
-  React.useEffect(() => {
-    if (params?.paymentSuccess === "true") {
-      console.log("🔄 Payment success detected, refetching cart...");
-      refetch().then(() => {
-        console.log("✅ Cart refetched successfully");
-      });
-
-      // ✅ remove param to prevent repeated refetch
-      router.setParams({ paymentSuccess: "false" });
-    }
-  }, [params?.paymentSuccess, refetch]);
 
   // ------------------ Handlers ------------------
 
@@ -175,10 +164,15 @@ export default function CartScreen() {
 
   const handleCheckout = async () => {
     if (!userId) return alert("Please login first");
-
+    if (!RazorpayCheckout || !RazorpayCheckout.open) {
+      console.log("Razorpay module not linked properly:", RazorpayCheckout);
+      alert("Razorpay not installed properly. Use Dev Build, not Expo Go.");
+      return;
+    }
     setIsProcessingPayment(true);
 
     try {
+      // ✅ Step 1: Create Firestore order + Razorpay order in backend
       const checkoutRes = await checkoutCart({
         variables: { userId },
       });
@@ -192,6 +186,7 @@ export default function CartScreen() {
 
       const { internalOrderId, restaurantId, total, cashfreeOrderId } = response;
 
+      // ✅ cashfreeOrderId is Razorpay order_id (kept same key to avoid backend/frontend changes)
       const razorpayOrderId = cashfreeOrderId;
 
       if (!razorpayOrderId) {
@@ -199,25 +194,44 @@ export default function CartScreen() {
         return;
       }
 
-      const amountInPaise = Math.round(total * 100).toString();
+      // ✅ Step 2: Open Razorpay Checkout
+      const options = {
+        key: "rzp_test_S5k3kvgmXRiymn", // ✅ replace with your test/live key_id
+        amount: Math.round(total * 100).toString(), // paise
+        currency: "INR",
 
-      router.push({
-        pathname: "/razorpay-webview",
-        params: {
-          order_id: razorpayOrderId,
-          amount: amountInPaise,
-          key_id: "rzp_test_S5k3kvgmXRiymn",
-          name: "Grabbit",
-          description: `Order ${internalOrderId}`,
-          prefill_name: userName || "Customer",
-          prefill_email: meData?.me?.email || "test@example.com",
-          prefill_contact: meData?.me?.mobileNumber || "9999999999",
+        name: "Grabbit",
+        description: `Order ${internalOrderId}`,
+        order_id: razorpayOrderId,
 
-          // ✅ extra (optional)
+        prefill: {
+          name: userName || "Customer",
+          email: meData?.me?.email || "test@example.com",
+          contact: meData?.me?.mobileNumber || "9999999999",
+        },
+
+        notes: {
           internalOrderId,
           restaurantId,
         },
-      });
+
+        theme: { color: "#f97316" },
+      };
+      console.log("RazorpayCheckout:", RazorpayCheckout);
+
+      RazorpayCheckout.open(options)
+        .then((data) => {
+          console.log("✅ Razorpay Payment Success:", data);
+          alert("Payment successful ✅");
+
+          // ✅ DO NOT mark paid here (webhook will do)
+          // ✅ just refetch cart so UI updates if cart is cleared
+          refetch();
+        })
+        .catch((error) => {
+          console.log("❌ Razorpay Payment Failed:", error);
+          alert("Payment cancelled or failed");
+        });
     } catch (err) {
       console.error("❌ Payment start error:", err);
       alert("Payment failed to start");
