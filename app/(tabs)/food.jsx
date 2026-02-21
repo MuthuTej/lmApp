@@ -196,7 +196,7 @@ export default function CartScreen() {
 
       // ✅ Step 2: Open Razorpay Checkout
       const options = {
-        key: "rzp_test_S5k3kvgmXRiymn", // ✅ replace with your test/live key_id
+        key: "rzp_live_S6ulDjufBQYema", // ✅ replace with your test/live key_id
         amount: Math.round(total * 100).toString(), // paise
         currency: "INR",
 

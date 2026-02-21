@@ -100,10 +100,13 @@ const Home = () => {
 
   const displayList = realtimeList?.restaurantsListUpdated || data?.getRestaurents || [];
 
-  const restaurants = displayList.map((restaurant, index) => ({
-    ...restaurant,
-    // Removed manual image manipulation props
-  }));
+  const restaurants = displayList.map((restaurant, index) => {
+    const menuData = allRestaurantMenus.find((m) => m.name === restaurant.name);
+    return {
+      ...restaurant,
+      isOpen: menuData ? menuData.isOpen : true,
+    };
+  });
   const topCategoryDishes = React.useMemo(() => {
     if (!activeCategory) return [];
 
@@ -530,7 +533,8 @@ const Home = () => {
               <Link href={`/restaurants/${item.name}`} asChild>
                 <TouchableOpacity
                   activeOpacity={0.85}
-                  className="rounded-[36px] mb-8 bg-white h-72 w-full shadow-2xl shadow-orange-500/50 border-[6px] border-orange-500"
+                  className={`rounded-[36px] mb-8 bg-white h-72 w-full shadow-2xl ${item.isOpen ? "shadow-orange-500/50 border-orange-500" : "shadow-gray-400/30 border-gray-400"
+                    } border-[6px]`}
                 >
                   <View className="relative w-full h-full rounded-[26px] overflow-hidden bg-white">
                     {/* Full Image */}
@@ -553,6 +557,17 @@ const Home = () => {
                         ]
                       }}
                     />
+
+                    {/* Grayscale/Closed Overlay */}
+                    {!item.isOpen && (
+                      <View className="absolute inset-0 bg-gray-900/60 z-10 flex items-center justify-center">
+                        <View className="bg-white/95 px-8 py-3 rounded-full border-2 border-gray-500 shadow-xl">
+                          <Text className="text-gray-900 font-outfit-black text-2xl tracking-[4px] uppercase italic">
+                            Closed
+                          </Text>
+                        </View>
+                      </View>
+                    )}
 
                     {/* Glass Bottom Panel - Bright & Clean */}
                     <View className="absolute bottom-4 left-4 right-4 bg-white/95 p-5 rounded-[20px] shadow-lg shadow-orange-500/20 backdrop-blur-md border-[2px] border-orange-200">
